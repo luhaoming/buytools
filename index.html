@@ -23,7 +23,7 @@ function myStart() {
   urls = intxt.split("\n");
   if (urls.length > 0) {
     urls.forEach(function(itm) {
-      if (/^http/.test(itm)) {
+      if (/^(http|line)/.test(itm) ) {
         var ifrm = document.createElement("iframe");
         ifrm.setAttribute("src", itm);
         ifrm.style.width = "0";
