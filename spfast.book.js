@@ -1,0 +1,3 @@
+var indebug=!0;document.title="fast4-".concat(document.title);function dd(a){indebug&&console.log(a)}function clickBtn(a){document.querySelectorAll("button").forEach(function(b){(new RegExp(a)).test(b.innerText)&&b.click()})}
+var keyvoucher=setInterval(function(){$("div.input-with-validator__success-message:contains('\u4f60\u5df2\u8f38\u5165\u6709\u6548\u7684\u6298\u6263\u4ee3\u78bc\uff0c\u7acb\u523b\u5132\u5b58\uff01')").length&&(clickBtn("\u4f7f\u7528"),clearInterval(keyvoucher))},10),chksetvoucher=setInterval(function(){0<$("div._22DmGV._1Vir4l").length&&(clickBtn("\u597d"),clearInterval(chksetvoucher))},10),putorder=setInterval(function(){$("._38DBn-._1ylw6p._3a1SMG").length&&(clearInterval(putorder),dd("doOrder"),
+clickBtn("\u4e0b\u8a02\u55ae"))},10);
