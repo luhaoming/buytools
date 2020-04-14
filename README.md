@@ -1,2 +1,7 @@
-# openurl
-Launch url arrays at one time
+# OPENURL
+
+some useful bookmarklets .
+
+
+*[OpenMultiURls](mopen.html)
+*[SP vocher matcher](spmatch.md)
