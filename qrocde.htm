@@ -1,0 +1,402 @@
+
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" prefix="" lang="zh-TW">
+<head>
+<meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
+    <meta name="generator" content="Jekyll v3.8.5">
+    <title>ATM轉帳QRCODE</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+    <style>
+        .bd-placeholder-img {
+        font-size: 1.125rem;
+        text-anchor: middle;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        }
+
+    @media (min-width: 768px) {
+        .bd-placeholder-img-lg {
+        font-size: 3.5rem;
+        }
+    }
+    </style>
+    <!-- Custom styles for this template -->
+</head>
+<body>
+<main role="main" class="container-fluid">
+<form>
+    <div class="form-group">
+    <label for="bank_code">銀行代號</label>
+    <select class="form-control" id="bank_code">
+        <datalist id="banks">
+            <option selected value="" disabled>請輸入銀行代號</option>
+            <optgroup label="=====郵局=====">
+                <option value="700">700中華郵政股份有限公司</option>
+            </optgroup>
+            <optgroup label="=====本國銀行、信合社====="><!--
+                <option value="000中央銀行">000中央銀行</option>//-->
+                <option value="004">004臺灣銀行</option>
+                <option value="005">005台灣土地銀行</option>
+                <option value="006">006合作金庫商業銀行</option>
+                <option value="007">007第一商業銀行</option>
+                <option value="008">008華南商業銀行</option>
+                <option value="009">009彰化商業銀行</option>
+                <option value="011">011上海商業儲蓄銀行</option>
+                <option value="012">012台北富邦商業銀行</option>
+                <option value="013">013國泰世華商業銀行</option>
+                <option value="016">016高雄銀行</option>
+                <option value="017">017兆豐國際商業銀行</option>
+                <option value="018">018全國農業金庫</option>
+                <option value="021">021花旗（台灣）銀行</option>
+                <option value="040">040中華開發金控</option>
+                <option value="048">048王道商業銀行</option>
+                <option value="050">050台灣中小企業銀行</option>
+                <option value="052">052渣打國際商業銀行</option>
+                <option value="053">053台中商業銀行</option>
+                <option value="054">054京城商業銀行</option>
+                <option value="081">081匯豐（台灣）商業銀行</option>
+                <option value="101">101瑞興商業銀行</option>
+                <option value="102">102華泰商業銀行</option>
+                <option value="103">103台灣新光商業銀行</option>
+                <option value="104">104台北市第五信用合作社</option>
+                <option value="108">108陽信商業銀行</option>
+                <option value="114">114基隆市第一信用合作社</option>
+                <option value="115">115基隆市第二信用合作社</option>
+                <option value="118">118板信商業銀行</option>
+                <option value="119">119淡水第一信用合作社</option>
+                <option value="120">120新北市淡水信用合作社</option>
+                <option value="124">124宜蘭信用合作社</option>
+                <option value="127">127桃園縣桃園信用合作社</option>
+                <option value="130">130新竹第一信用合作社</option>
+                <option value="132">132新竹第三信用合作社</option>
+                <option value="146">146台中市第二信用合作社</option>
+                <option value="147">147三信商業銀行</option>
+                <option value="158">158彰化第一信用合作社</option>
+                <option value="161">161彰化第五信用合作社</option>
+                <option value="162">162彰化第六信用合作社</option>
+                <option value="163">163彰化第十信用合作社</option>
+                <option value="165">165彰化縣鹿港信用合作社</option>
+                <option value="178">178嘉義市第三信用合作社</option>
+                <option value="188">188台南第三信用合作社</option>
+                <option value="204">204高雄市第三信用合作社</option>
+                <option value="215">215花蓮第一信用合作社</option>
+                <option value="216">216花蓮第二信用合作社</option>
+                <option value="222">222澎湖縣第一信用合作社</option>
+                <option value="223">223澎湖縣第二信用合作社</option>
+                <option value="224">224金門縣信用合作社</option>
+                <option value="803">803聯邦商業銀行</option>
+                <option value="805">805遠東國際商業銀行</option>
+                <option value="806">806元大商業銀行</option>
+                <option value="807">807永豐商業銀行</option>
+                <option value="808">808玉山商業銀行</option>
+                <option value="809">809凱基商業銀行</option>
+                <option value="810">810星展（台灣）商業銀行</option>
+                <option value="812">812台新國際商業銀行</option>
+                <option value="815">815日盛國際商業銀行</option>
+                <option value="816">816安泰商業銀行</option>
+                <option value="822">822中國信託商業銀行</option>
+            </optgroup>
+            <optgroup label="=====信用卡發行機構=====">
+                <option value="956">956財團法人聯合信用卡處理中心</option>
+                <option value="960">960台灣樂天信用卡股份有限公司</option>
+                <option value="978">978台灣永旺信用卡股份有限公司</option>
+            </optgroup>
+            <optgroup label="=====農漁會、農金中心=====">
+                <option value="512">512南農中心（雲林區漁會）</option>
+                <option value="515">515南農中心（嘉義區漁會）</option>
+                <option value="517">517南農中心（南市區漁會）</option>
+                <option value="518">518南農中心（南縣區漁會）</option>
+                <option value="519">519新化區農會</option>
+                <option value="520">520南農中心（小港區漁會、高雄區漁會）</option>
+                <option value="521">521南農中心（彌陀區漁會、永安區漁會、興達港區漁會）</option>
+                <option value="523">523南農中心（枋寮區漁會、東港區漁會、林邊區漁會）</option>
+                <option value="524">524南農中心（新港區漁會）</option>
+                <option value="525">525南農中心（澎湖區漁會）</option>
+                <option value="526">526金門區漁會</option>
+                <option value="538">538宜蘭市農會</option>
+                <option value="541">541白河區農會</option>
+                <option value="542">542麻豆區農會</option>
+                <option value="547">547後壁區農會</option>
+                <option value="549">549下營區農會</option>
+                <option value="551">551官田區農會</option>
+                <option value="552">552大內區農會</option>
+                <option value="556">556學甲區農會</option>
+                <option value="557">557新市區農會</option>
+                <option value="558">558安定區農會</option>
+                <option value="559">559山上區農會</option>
+                <option value="561">561左鎮區農會</option>
+                <option value="562">562仁德區農會</option>
+                <option value="564">564關廟區農會</option>
+                <option value="565">565龍崎區農會</option>
+                <option value="567">567南化區農會</option>
+                <option value="568">568七股區農會</option>
+                <option value="570">570南投市農會</option>
+                <option value="573">573埔里鎮農會</option>
+                <option value="574">574竹山鎮農會</option>
+                <option value="575">575中寮鄉農會</option>
+                <option value="577">577魚池鄉農會</option>
+                <option value="578">578水里鄉農會</option>
+                <option value="579">579國姓鄉農會</option>
+                <option value="580">580鹿谷鄉農會</option>
+                <option value="581">581信義鄉農會</option>
+                <option value="582">582仁愛鄉農會</option>
+                <option value="583">583東山區農會</option>
+                <option value="585">585頭城鎮農會</option>
+                <option value="586">586羅東鎮農會</option>
+                <option value="587">587礁溪鄉農會</option>
+                <option value="588">588壯圍鄉農會</option>
+                <option value="589">589員山鄉農會</option>
+                <option value="596">596五結鄉農會</option>
+                <option value="598">598蘇澳區農會</option>
+                <option value="599">599三星區農會</option>
+                <option value="600">600農金資中心</option>
+                <option value="602">602中華民國農會中壢信用</option>
+                <option value="605">605高雄地區農會</option>
+                <option value="607">607北部地區農漁會</option>
+                <option value="608">608聯資中心（桃園農、八德農、大園農、大溪農、平鎮農、新屋農、楊梅）</option>
+                <option value="610">610北農中心（竹市農、湖口農、竹東農、橫山農、竹北農）</option>
+                <option value="611">611後龍農會</option>
+                <option value="612">612台中市大雅區農會</option>
+                <option value="613">613南農中心（名間本會）</option>
+                <option value="614">614南農中心（永靖農、員林農、秀水農、二林農）</option>
+                <option value="615">615基隆市農會</option>
+                <option value="616">616南農中心（莿桐、褒忠、崙背、古坑、二崙、四湖、西螺）</option>
+                <option value="617">617南農中心（竹崎、鹿草、嘉市、民雄、溪口、梅山、義竹、東石、番路）</option>
+                <option value="618">618南農中心（永康、西港、六甲、善化、鹽水、北門、佳里、將軍、新營、歸仁）</option>
+                <option value="619">619南農中心（大社、仁武、大樹、橋頭、湖內、路竹、阿蓮、燕巢、杉林、甲仙）</option>
+                <option value="620">620南農中心（林邊、恆春、萬丹、新園、車城、里港、枋山、麟洛、滿州）</option>
+                <option value="621">621南農中心（壽豐本會、吉安本會、新秀本會、富里本會）</option>
+                <option value="622">622南農中心（池上、成功、長濱、關山、鹿野、東河、太麻里、台東地區）</option>
+                <option value="623">623北部地區農漁會</option>
+                <option value="624">624南農中心（澎湖縣農會）</option>
+                <option value="625">625台中地區農會</option>
+                <option value="627">627南農中心（連江縣農會）</option>
+                <option value="628">628鹿港鎮農會</option>
+                <option value="629">629和美鎮農會</option>
+                <option value="631">631溪湖鎮農會</option>
+                <option value="632">632田中鎮農會</option>
+                <option value="633">633北斗鎮農會</option>
+                <option value="635">635線西鄉農會</option>
+                <option value="636">636伸港鄉農會</option>
+                <option value="638">638花壇鄉農會</option>
+                <option value="639">639大村鄉農會</option>
+                <option value="642">642社頭鄉農會</option>
+                <option value="643">643二水鄉農會</option>
+                <option value="646">646大城鄉農會</option>
+                <option value="647">647溪州鄉農會</option>
+                <option value="649">649埔鹽鄉農會</option>
+                <option value="650">650福興鄉農會</option>
+                <option value="651">651彰化市農會</option>
+                <option value="683">683北港鎮農會</option>
+                <option value="685">685土庫鎮農會</option>
+                <option value="693">693雲林縣東勢鄉農會</option>
+                <option value="696">696水林鄉農會</option>
+                <option value="697">697元長鄉農會</option>
+                <option value="698">698麥寮鄉農會</option>
+                <option value="699">699林內鄉農會</option>
+                <option value="749">749內埔地區農會</option>
+                <option value="775">775土城區農會</option>
+                <option value="776">776三重區農會</option>
+                <option value="777">777中和地區農會</option>
+                <option value="778">778淡水區農會</option>
+                <option value="779">779樹林區農會</option>
+                <option value="780">780鶯歌區農會</option>
+                <option value="781">781三峽區農會</option>
+                <option value="785">785蘆洲區農會</option>
+                <option value="786">786五股區農會</option>
+                <option value="787">787林口區農會</option>
+                <option value="788">788泰山區農會</option>
+                <option value="789">789坪林區農會</option>
+                <option value="790">790八里區農會</option>
+                <option value="791">791金山地區農會</option>
+                <option value="792">792瑞芳地區農會</option>
+                <option value="793">793新店地區農會</option>
+                <option value="795">795深坑區農會</option>
+                <option value="796">796石碇區農會</option>
+                <option value="797">797平溪區農會</option>
+                <option value="798">798石門區農會</option>
+                <option value="799">799三芝區農會</option>
+                <option value="860">860中埔鄉農會</option>
+                <option value="866">866阿里山鄉農會</option>
+                <option value="868">868台中市東勢區農會</option>
+                <option value="869">869清水區農會</option>
+                <option value="870">870梧棲區農會</option>
+                <option value="871">871大甲區農會</option>
+                <option value="872">872沙鹿區農會</option>
+                <option value="874">874霧峰區農會</option>
+                <option value="875">875太平區農會</option>
+                <option value="876">876烏日區農會</option>
+                <option value="877">877后里區農會</option>
+                <option value="878">878大雅區農會</option>
+                <option value="879">879潭子區農會</option>
+                <option value="880">880石岡區農會</option>
+                <option value="881">881新社區農會</option>
+                <option value="882">882大肚區農會</option>
+                <option value="883">883外埔區農會</option>
+                <option value="884">884大安區農會</option>
+                <option value="885">885龍井區農會</option>
+                <option value="886">886和平區農會</option>
+                <option value="891">891花蓮市農會</option>
+                <option value="895">895瑞穗鄉農會</option>
+                <option value="896">896玉溪地區農會</option>
+                <option value="897">897鳳榮地區農會</option>
+                <option value="898">898光豐地區農會</option>
+                <option value="901">901板農中心（大里市農會）</option>
+                <option value="902">902苗栗市農會</option>
+                <option value="903">903汐止區農會</option>
+                <option value="904">904新北市新莊區農會</option>
+                <option value="906">906頭份市農會</option>
+                <option value="907">907竹南鎮農會</option>
+                <option value="908">908通霄鎮農會</option>
+                <option value="909">909苑裡鎮農會</option>
+                <option value="910">910桃竹區聯資中心</option>
+                <option value="912">912冬山鄉農會</option>
+                <option value="913">913後龍鎮農會</option>
+                <option value="914">914卓蘭鎮農會</option>
+                <option value="915">915西湖鄉農會</option>
+                <option value="916">916草屯鎮農會</option>
+                <option value="917">917公館鄉農會</option>
+                <option value="918">918銅鑼鄉農會</option>
+                <option value="919">919三義鄉農會</option>
+                <option value="920">920造橋鄉農會</option>
+                <option value="921">921南庄鄉農會</option>
+                <option value="922">922台南地區農會信用部</option>
+                <option value="923">923獅潭鄉農會</option>
+                <option value="924">924頭屋鄉農會</option>
+                <option value="925">925三灣鄉農會</option>
+                <option value="926">926大湖地區農會</option>
+                <option value="928">928板農中心（板橋市農會）</option>
+                <option value="929">929關西鎮農會</option>
+                <option value="930">930新埔鎮農會</option>
+                <option value="931">931竹北市農會</option>
+                <option value="932">932湖口鄉農會</option>
+                <option value="933">933芎林鄉農會</option>
+                <option value="934">934寶山鄉農會</option>
+                <option value="935">935峨眉鄉農會</option>
+                <option value="936">936北埔鄉農會</option>
+                <option value="937">937竹東地區農會</option>
+                <option value="938">938橫山地區農會</option>
+                <option value="939">939新豐鄉農會</option>
+                <option value="940">940新竹市農會信用部</option>
+                <option value="951">951北農中心</option>
+                <option value="952">952南農中心</option>
+                <option value="953">953田尾鄉農會</option>
+                <option value="954">954中農中心</option>
+                <option value="961">961國軍同袍儲蓄會</option>
+                <option value="984">984北投區農會</option>
+                <option value="985">985士林區農會</option>
+                <option value="986">986內湖區農會</option>
+                <option value="987">987南港區農會</option>
+                <option value="988">988木柵區農會</option>
+                <option value="989">989景美區農會</option>
+            </optgroup>
+        </datalist>
+    </select>
+    </div>
+    <div class="form-group">
+    <label for="target_account1">帳號</label>
+    <textarea style="width:500px;height:300px;" type="number" class="form-control" id="target_account" placeholder="轉入銀行帳號 (16位數，不足前方補0)"></textarea>
+</div>
+<div class="form-group">
+    <label for="cash">金額</label>
+    <input type="number" class="form-control" id="cash" placeholder="NTD" value="1">
+</div>
+</form>
+<div id="content" align="center" ></div>
+<script id="template-qr-code" type="text/html">
+    <br>
+    <label for="qrcode-url-{{i}}">第 {{j}} 個QRCode</label>
+    <p><img id="qrcode" src="{{src}}" /></p>
+    <label for="qrcode-url-{{i}}">QR Code網址:</label>
+    <input id="qrcode-url-{{i}}" style="width:600px;"  type="text" onclick="this.select()" value="{{srctext}}" />
+    <br><br><br><br><br>
+</script>
+</main><!-- /.container -->
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+<script type="text/javascript">
+    $( document ).ready(function() {
+        $('#bank_code').val('812');
+        $('#cash').val('1');
+        // $('select').select2();
+    });
+
+    $(document).on("change", "#bank_code", function (e) {
+        gen();
+    });
+    $(document).on("change", "#target_account", function (e) {
+        gen();
+    });
+    $(document).on("change", "#cash", function (e) {
+        gen();
+    });
+
+    function gen(){
+        //$('#content').val('');
+        var lines = $('#target_account').val().split("\n");
+        //var target_account = $('#target_account').val();
+        //console.log(1);
+        //console.log(target_account);
+        //console.log(lines[1]);
+        //console.log("2");
+        //var lines = target_account.split('\n');
+        /*
+        for(var i = 0;i < lines.length;i++){
+            //code here using lines[i] which will give you each line
+            var str = 'TWQRP://個人轉帳/158/02/V1?D1='+$('#cash').val()+'00&D5='+$('#bank_code').val()+'&D6='+$('#target_account').val().padStart(16,'0');
+            var qrurl = 'http://chart.apis.google.com/chart?cht=qr&chs=240x240&chld=H&chl='+ encodeURIComponent(str);
+            $('#text_content').html(str);
+            // $('#text_content').html(qrurl);
+            //$('#qrcode').add(<img id="qrcode{{i}}">)
+            $('#qrcode').attr('src',qrurl);
+
+            
+            
+        }
+        */
+
+        var textarea = document.getElementById("target_account"),
+        content = document.getElementById("content"),
+        cash = document.getElementById("cash"),
+        qrTemplate = document.getElementById('template-qr-code');
+        //console.log("000");
+        //console.log("lines array count:" + lines.length);
+        content.innerHTML = "";
+        //console.log("lines array count1:" + lines.lenght);
+        var j = 1;
+        for(var i = 0; i < lines.length ;i++) {
+
+                lines[i] = lines[i].trim();
+
+                if (lines[i] == "" ) continue;
+
+                var qrSrc = qrTemplate.innerHTML;
+                
+                //chart = "http://chart.googleapis.com/chart?cht=qr&chs=" + size + "x" + size + "&choe=UTF-8&chld=L|0&chl=" + data;
+                //var str = 'TWQRP://個人轉帳/158/02/V1?D1='+$('#cash').val()+'00&D5='+$('#bank_code').val()+'&D6='+$('#target_account').val().padStart(16,'0');
+                var str = 'TWQRP://個人轉帳/158/02/V1?D1='+$('#cash').val()+'00&D5='+$('#bank_code').val()+'&D6='+lines[i];
+                var qrurl = 'http://chart.apis.google.com/chart?cht=qr&chs=240x240&chld=H&chl='+ encodeURIComponent(str);
+                //console.log();
+                //console.log("111");
+                //console.log(str);
+                //console.log(qrurl);
+                qrSrc = qrSrc.replace(new RegExp('{{srctext}}', 'g'), str);
+                qrSrc = qrSrc.replace(new RegExp('{{src}}', 'g'), qrurl);
+                qrSrc = qrSrc.replace(new RegExp('{{i}}', 'g'), i);
+                qrSrc = qrSrc.replace(new RegExp('{{j}}', 'g'), j);
+                j++;
+                //console.log("qrsrc:" + qrSrc);
+                content.insertAdjacentHTML('beforeEnd', qrSrc);
+                
+        }
+        
+    }
+</script>
+</html>
