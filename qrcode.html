@@ -381,12 +381,8 @@
                 
                 //chart = "http://chart.googleapis.com/chart?cht=qr&chs=" + size + "x" + size + "&choe=UTF-8&chld=L|0&chl=" + data;
                 //var str = 'TWQRP://個人轉帳/158/02/V1?D1='+$('#cash').val()+'00&D5='+$('#bank_code').val()+'&D6='+$('#target_account').val().padStart(16,'0');
-                var str = 'TWQRP://個人轉帳/158/02/V1?D1='+$('#cash').val()+'00&D5='+$('#bank_code').val()+'&D6='+lines[i];
+                var str = 'TWQRP://個人轉帳/158/02/V1?D1='+$('#cash').val()+'00&D5='+$('#bank_code').val()+'&D6='+lines[i].toString().padStart(16,'0');
                 var qrurl = 'http://chart.apis.google.com/chart?cht=qr&chs=240x240&chld=H&chl='+ encodeURIComponent(str);
-                //console.log();
-                //console.log("111");
-                //console.log(str);
-                //console.log(qrurl);
                 qrSrc = qrSrc.replace(new RegExp('{{srctext}}', 'g'), str);
                 qrSrc = qrSrc.replace(new RegExp('{{src}}', 'g'), qrurl);
                 qrSrc = qrSrc.replace(new RegExp('{{i}}', 'g'), i);
