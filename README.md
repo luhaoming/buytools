@@ -1,6 +1,5 @@
-# OPENURL
+# Buying Tools
 
-some useful bookmarklets .
+some useful bookmarklets and js tools for shopping.
 
-
-* [OpenMultiURls](mopen.html)
+* [Open Multi URls in hidden frame](mopen.html)
