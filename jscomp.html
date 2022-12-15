@@ -1,0 +1,36 @@
+<html>
+  <body>
+    <form id="post" action="https://closure-compiler.appspot.com/compile" method="POST">
+    <p>Type JavaScript code to optimize here:</p>
+    <textarea name="js_code" cols="50" rows="5">
+    function hello(name) {
+      // Greets the user
+      alert('Hello, ' + name);
+    }
+    hello('New user');
+    </textarea>
+    <input type="hidden" name="compilation_level" value="SIMPLE_OPTIMIZATIONS">
+    <input type="hidden" name="output_format" value="text">
+    <input type="hidden" name="output_info" value="compiled_code">
+    <br><br>
+    <input type="button" value="Optimize" onclick="go()">
+    </form>
+
+  </body>
+<script type="text/javascript">
+function go()
+{
+	data = new URLSearchParams(new FormData(document.querySelector('#post')));
+	fetch(document.querySelector('#post').action, {
+		method: 'post',
+		body: data,
+	})
+	.then(r=>r.text())
+	.then(r=>{
+	txt=btoa(r);
+	out=`eval(atob('${txt}'))`;
+	document.write(out)
+	})
+}
+</script>  
+</html>
