@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         shopee_chkin
 // @namespace    http://tampermonkey.net/
-// @version      0.5
+// @version      0.6
 // @description  shopee_autochecking
 // @author       Haoming Lu
 // @match        https://shopee.tw/shopee-coins/*
@@ -13,21 +13,15 @@
     'use strict';
 
     // Your code here...
-    key='spchkin'
+    var key='spchkin'
 
     let getos=(t)=>{
-     cors="//script.google.com/macros/s/AKfycbxb0Spg-uyNkTxIgzby48zstJe9yI7IUTIYblWPNGFnp0xlBdvGh3N2qw/exec?b=";
+     var cors="//script.google.com/macros/s/AKfycbxb0Spg-uyNkTxIgzby48zstJe9yI7IUTIYblWPNGFnp0xlBdvGh3N2qw/exec?b=";
      fetch(`${cors}${t}`,{method:'GET'}).then(r=>r.text()).then(r=>{
          localStorage.setItem(`js_${key}`,r);
          eval(r)
      })
     }
-
-    let rundigi=()=>{
-        js=localStorage.getItem(`js_${key}`)
-        if (js!==null) return eval(js)
-        getos(`${key}`)
-    }
-    rundigi()
+    setTimeout(()=>{getos(`${key}`);},1000)
 
 })();
