@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         shopee_chkin
 // @namespace    http://tampermonkey.net/
-// @version      0.2
+// @version      0.3
 // @description  shopee_autochecking
 // @author       Haoming Lu
 // @match        https://shopee.tw/shopee-coins/*
@@ -13,12 +13,13 @@
     'use strict';
 
     // Your code here...
+
+
     setTimeout(function() {
-        var buttons = document.getElementsByTagName('button');
+        var buttons = top.window.document.querySelectorAll("button")
         for (var i = 0; i < buttons.length; i++) {
             if (buttons[i].textContent.includes('完成簽到')) {
                 buttons[i].click();
-                document.title='checkin ok'
                 break;
             }
         }
