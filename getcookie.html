@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cookie Extractor from cURL</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 10px 15px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <h1>cURL Cookie Extractor</h1>
+    <h2>Input cURL Statement</h2>
+    <textarea id="inputTXT" placeholder="Paste your cURL statement here..."></textarea>
+    <button onclick="extractCookie()">Extract Cookie</button>
+    <h2>Extracted Cookie</h2>
+    <textarea id="outputTXT" readonly placeholder="Extracted cookie will appear here..."></textarea>
+
+    <script>
+        function extractCookie() {
+            const inputText = document.getElementById("inputTXT").value;
+            // Regular expression to capture the cookie part, case insensitive
+            const cookieRegex = /-H\s+'(?:cookie|Cookie):\s*([^']+)'/i; 
+            const match = inputText.match(cookieRegex);
+            const outputTextArea = document.getElementById("outputTXT");
+
+            if (match && match[1]) {
+                // Include the 'cookie:' prefix in the output
+                outputTextArea.value = `cookie: ${match[1]}`; // Set the extracted cookie with prefix to output
+            } else {
+                outputTextArea.value = "No cookie found in the provided cURL statement.";
+            }
+        }
+    </script>
+</body>
+</html>
