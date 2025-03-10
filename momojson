@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vue JSON Form</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.global.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .output {
+            white-space: pre-wrap;
+            word-break: break-all;
+            font-family: monospace;
+        }
+        .clipboard-message {
+            height: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="container mt-4">
+            <h1 class="mb-4">MOMO JSON Extractor</h1>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Input JSON</h5>
+                </div>
+                <div class="card-body">
+                    <textarea class="form-control mb-3" rows="5" v-model="inputJson" placeholder='Enter JSON like: {"m_promo_no":"M25030800031","dt_promo_no":"D25030800001","gift_code":"Gift001"}'></textarea>
+                    
+                    <button class="btn btn-primary" @click="processJson" :disabled="!inputJson">Process JSON</button>
+                </div>
+            </div>
+            
+            <div v-if="outputJson" class="output-container">
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Output Format 1 (With psample)</h5>
+                        <button class="btn btn-sm btn-outline-secondary" @click="copyToClipboard(outputJson)" :disabled="!outputJson">
+                            Copy to Clipboard
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="output bg-light p-3 border rounded">{{ outputJson }}</div>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Output Format 2 (Raw JSON)</h5>
+                        <button class="btn btn-sm btn-outline-secondary" @click="copyToClipboard(rawJsonOutput)" :disabled="!rawJsonOutput">
+                            Copy to Clipboard
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="output bg-light p-3 border rounded">{{ rawJsonOutput }}</div>
+                    </div>
+                </div>
+                
+                <div class="clipboard-message text-success">{{ clipboardMessage }}</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, watch } = Vue;
+        
+        createApp({
+            setup() {
+                const inputJson = ref('');
+                const outputJson = ref('');
+                const rawJsonOutput = ref('');
+                const clipboardMessage = ref('');
+                
+                const processJson = () => {
+                    try {
+                        // Parse the input to ensure it's valid JSON
+                        const parsedJson = JSON.parse(inputJson.value);
+                        
+                        // Add enCustNo property
+                        parsedJson.enCustNo = "XXXXX";
+                        
+                        // Format the outputs as requested
+                        outputJson.value = `psample='${JSON.stringify(parsedJson)}'`;
+                        rawJsonOutput.value = JSON.stringify(parsedJson, null, 2);
+                    } catch (error) {
+                        outputJson.value = `Error: ${error.message}`;
+                    }
+                };
+                
+                const copyToClipboard = async (textToCopy) => {
+                    try {
+                        await navigator.clipboard.writeText(textToCopy);
+                        clipboardMessage.value = 'Copied to clipboard!';
+                        
+                        // Clear the message after 2 seconds
+                        setTimeout(() => {
+                            clipboardMessage.value = '';
+                        }, 2000);
+                    } catch (err) {
+                        clipboardMessage.value = 'Failed to copy to clipboard';
+                    }
+                };
+                
+                return {
+                    inputJson,
+                    outputJson,
+                    rawJsonOutput,
+                    clipboardMessage,
+                    processJson,
+                    copyToClipboard
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
