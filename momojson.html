@@ -20,7 +20,7 @@
 <body>
     <div id="app">
         <div class="container mt-4">
-            <h1 class="mb-4">MOMO JSON Extractor</h1>
+            <h1 class="mb-4">JSON Extractor</h1>
             
             <div class="card mb-4">
                 <div class="card-header">
@@ -83,7 +83,7 @@
                         
                         // Format the outputs as requested
                         outputJson.value = `psample='${JSON.stringify(parsedJson)}'`;
-                        rawJsonOutput.value = JSON.stringify(parsedJson, null, 2);
+                        rawJsonOutput.value = JSON.stringify(parsedJson);
                     } catch (error) {
                         outputJson.value = `Error: ${error.message}`;
                     }
