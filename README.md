@@ -6,4 +6,5 @@ some useful bookmarklets and js tools for shopping.
 
 * [Open Multi URls in hidden frame](./mopen.html)
 * [Multi TWPAY QRCODEs ](./qrcode.html)
-* [JS Compile](./jscomp.html)
+* [cvs](./barcode.html)
+* [momojson](./momojson.html)
