@@ -4,10 +4,20 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width">
   <title>buytools notify</title>
+  <script src="https://js.pusher.com/beams/2.1.0/push-notifications-cdn.js"></script>
 </head>
 <body>
 Ha..Ha..
 
-  <script src="https://js.pusher.com/beams/2.1.0/push-notifications-cdn.js"></script>
+  <script>
+  const beamsClient = new PusherPushNotifications.Client({
+    instanceId: '190c2b6c-6a0b-4e6c-9a55-a3971b8885cb',
+  });
+
+  beamsClient.start()
+    .then(() => beamsClient.addDeviceInterest('hello'))
+    .then(() => console.log('Successfully registered and subscribed!'))
+    .catch(console.error);
+</script>
 </body>
 </html>
