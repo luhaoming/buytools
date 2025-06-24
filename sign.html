@@ -370,7 +370,7 @@
     </div>
 
     <div class="container">
-        <div class="version">版本：ver.2025-06-24.002</div>
+        <div class="version">版本：ver.2025-06-24.005</div>
         <h1>房屋點交及費用結算確認書</h1>
 
         <div class="main-content">
@@ -696,16 +696,16 @@
                     }
                 });
                 
-                // 保存簽名
+                // 保存簽名（確保白色背景）
                 const landlordCanvas = document.getElementById('landlordSignature');
                 const tenantCanvas = document.getElementById('tenantSignature');
                 
                 if (landlordCanvas && !this.isCanvasEmpty(landlordCanvas)) {
-                    data.signatures.landlord = landlordCanvas.toDataURL();
+                    data.signatures.landlord = this.getCanvasWithWhiteBackground(landlordCanvas);
                 }
                 
                 if (tenantCanvas && !this.isCanvasEmpty(tenantCanvas)) {
-                    data.signatures.tenant = tenantCanvas.toDataURL();
+                    data.signatures.tenant = this.getCanvasWithWhiteBackground(tenantCanvas);
                 }
                 
                 data.step = workflowStep;
@@ -713,6 +713,30 @@
                 data.lastModified = new Date().toISOString();
                 
                 return data;
+            },
+
+            getCanvasWithWhiteBackground(sourceCanvas) {
+                try {
+                    // 創建臨時canvas確保有白色背景
+                    const tempCanvas = document.createElement('canvas');
+                    const tempCtx = tempCanvas.getContext('2d');
+                    
+                    tempCanvas.width = sourceCanvas.width;
+                    tempCanvas.height = sourceCanvas.height;
+                    
+                    // 先填白色背景
+                    tempCtx.fillStyle = 'white';
+                    tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                    
+                    // 再繪製原始簽名
+                    tempCtx.drawImage(sourceCanvas, 0, 0);
+                    
+                    return tempCanvas.toDataURL();
+                } catch (error) {
+                    console.error('處理簽名時發生錯誤:', error);
+                    // 如果失敗，返回原始簽名
+                    return sourceCanvas.toDataURL();
+                }
             },
             
             loadFormData(data) {
@@ -762,25 +786,25 @@
                 return !imageData.data.some(channel => channel !== 0);
             },
             
-            compressData(data) {
+            async compressData(data) {
                 // 簡化資料以減少URL長度
                 const compressed = {};
                 
                 // 只保存有值的欄位
                 Object.keys(data).forEach(key => {
-                    if (data[key] && data[key] !== '') {
+                    if (data[key] && data[key] !== '' && key !== 'sessionId' && key !== 'lastModified') {
                         compressed[key] = data[key];
                     }
                 });
                 
-                // 壓縮簽名（降低畫質）
+                // 大幅壓縮簽名
                 if (data.signatures) {
                     compressed.signatures = {};
                     if (data.signatures.landlord) {
-                        compressed.signatures.landlord = this.compressSignature(data.signatures.landlord);
+                        compressed.signatures.landlord = await this.compressSignature(data.signatures.landlord);
                     }
                     if (data.signatures.tenant) {
-                        compressed.signatures.tenant = this.compressSignature(data.signatures.tenant);
+                        compressed.signatures.tenant = await this.compressSignature(data.signatures.tenant);
                     }
                 }
                 
@@ -788,20 +812,35 @@
             },
             
             compressSignature(dataURL) {
-                // 創建臨時canvas壓縮簽名
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                const img = new Image();
-                
-                canvas.width = 200;  // 減小尺寸
-                canvas.height = 80;
-                
-                img.onload = function() {
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                };
-                img.src = dataURL;
-                
-                return canvas.toDataURL('image/jpeg', 0.5);  // 降低品質
+                try {
+                    // 創建臨時canvas壓縮簽名
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    // 大幅縮小尺寸
+                    canvas.width = 150;  
+                    canvas.height = 60;
+                    
+                    // 設定白色背景
+                    ctx.fillStyle = 'white';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    
+                    const img = new Image();
+                    return new Promise((resolve) => {
+                        img.onload = function() {
+                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                            // 更低品質壓縮
+                            resolve(canvas.toDataURL('image/jpeg', 0.3));
+                        };
+                        img.onerror = function() {
+                            resolve(dataURL); // 失敗時返回原始資料
+                        };
+                        img.src = dataURL;
+                    });
+                } catch (error) {
+                    console.error('壓縮簽名失敗:', error);
+                    return dataURL;
+                }
             },
             
             landlordCompleted() {
@@ -810,32 +849,81 @@
                 this.updateUI();
             },
             
-            tenantCompleted() {
+            async tenantCompleted() {
+                console.log('承租人簽名完成，開始生成最終連結...');
                 workflowStep = 'completed';
-                this.generateFinalLink();
-                this.updateUI();
+                
+                // 延遲一點確保簽名已保存
+                setTimeout(async () => {
+                    await this.generateFinalLink();
+                    this.updateUI();
+                }, 500);
             },
             
-            generateTenantLink() {
-                const formData = this.compressData(this.getFormData());
+            async generateTenantLink() {
+                const formData = await this.compressData(this.getFormData());
                 const encodedData = btoa(JSON.stringify(formData));
                 const baseUrl = window.location.origin + window.location.pathname;
                 const tenantLink = `${baseUrl}?data=${encodedData}&step=tenant`;
                 
-                if (tenantLink.length > 2000) {
+                console.log('承租人連結長度:', tenantLink.length);
+                
+                if (tenantLink.length > 1500) {
                     this.showLongURLWarning();
                 } else {
                     this.showShareLink('傳送給承租人簽名：', tenantLink);
                 }
             },
             
-            generateFinalLink() {
-                const formData = this.compressData(this.getFormData());
-                const encodedData = btoa(JSON.stringify(formData));
-                const baseUrl = window.location.origin + window.location.pathname;
-                const finalLink = `${baseUrl}?data=${encodedData}&step=completed`;
+            async generateFinalLink() {
+                console.log('正在生成最終連結...');
+                try {
+                    const formData = await this.compressData(this.getFormData());
+                    console.log('壓縮後資料大小:', JSON.stringify(formData).length);
+                    
+                    const encodedData = btoa(JSON.stringify(formData));
+                    const baseUrl = window.location.origin + window.location.pathname;
+                    const finalLink = `${baseUrl}?data=${encodedData}&step=completed`;
+                    
+                    console.log('最終連結長度:', finalLink.length);
+                    
+                    if (finalLink.length > 1500) {
+                        this.showCompactLink(formData);
+                    } else {
+                        this.showShareLink('完成文件連結：', finalLink);
+                        alert('簽名完成！文件已生成最終連結。');
+                    }
+                } catch (error) {
+                    console.error('生成最終連結失敗:', error);
+                    alert('生成連結時發生錯誤，請重新嘗試');
+                }
+            },
+            
+            showCompactLink(formData) {
+                // 極度簡化版本 - 只保留簽名
+                const compactData = {
+                    signatures: formData.signatures,
+                    step: 'completed'
+                };
                 
-                this.showShareLink('完成文件連結：', finalLink);
+                const encodedData = btoa(JSON.stringify(compactData));
+                const baseUrl = window.location.origin + window.location.pathname;
+                const compactLink = `${baseUrl}?data=${encodedData}&step=completed`;
+                
+                const container = document.getElementById('shareLinkContainer');
+                container.innerHTML = `
+                    <div class="share-link-container">
+                        <div style="font-size: 11px; font-weight: bold; margin-bottom: 5px;">✅ 簽名完成文件：</div>
+                        <div class="share-link">${compactLink.length > 100 ? compactLink.substring(0, 100) + '...' : compactLink}</div>
+                        <div style="font-size: 9px; color: #666; margin: 2px 0;">連結長度: ${compactLink.length} 字元（簡化版）</div>
+                        <button class="copy-btn" onclick="WorkflowManager.copyToClipboard('${compactLink}')">複製連結</button>
+                        <div style="font-size: 9px; color: #856404; margin-top: 5px;">
+                            ⚠️ 為減少連結長度，此版本僅保留簽名，不含詳細表單資料
+                        </div>
+                    </div>
+                `;
+                
+                alert('簽名完成！由於資料較多，已生成簡化版連結（僅含簽名）。');
             },
             
             showLongURLWarning() {
@@ -1124,23 +1212,28 @@
         function saveSignature() {
             if (!currentSignatureTarget || !modalSignaturePad) return;
             
+            console.log('正在保存簽名:', currentSignatureTarget);
+            
             const modalCanvas = modalSignaturePad.canvas;
             const targetCanvasId = currentSignatureTarget === 'landlord' ? 'landlordSignature' : 'tenantSignature';
             const targetCanvas = document.getElementById(targetCanvasId);
             const targetCtx = targetCanvas.getContext('2d');
             
-            // 清除目標canvas
-            targetCtx.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
+            // 清除目標canvas並設定白色背景
+            targetCtx.fillStyle = 'white';
+            targetCtx.fillRect(0, 0, targetCanvas.width, targetCanvas.height);
             
             // 縮放並複製簽名
             targetCtx.drawImage(modalCanvas, 0, 0, targetCanvas.width, targetCanvas.height);
             
-            // 保存並檢查流程
+            console.log('簽名已保存到:', targetCanvasId);
+            
+            // 檢查流程
             if (currentSignatureTarget === 'landlord' && workflowStep === 'landlord') {
-                // 出租人簽完，進入下一步
+                console.log('出租人簽名完成，進入下一步');
                 WorkflowManager.landlordCompleted();
             } else if (currentSignatureTarget === 'tenant' && workflowStep === 'tenant') {
-                // 承租人簽完，完成流程
+                console.log('承租人簽名完成，完成流程');
                 WorkflowManager.tenantCompleted();
             }
             
