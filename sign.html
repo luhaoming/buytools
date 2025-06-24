@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>房屋點交確認書</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.3;
+            height: 100vh;
+            overflow: auto;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 10px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        h1 {
+            text-align: center;
+            font-size: 18px;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 5px;
+        }
+        .version {
+            text-align: right;
+            font-size: 10px;
+            color: #7f8c8d;
+            margin-bottom: 8px;
+        }
+        .main-content {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .left-panel, .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .section {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 8px;
+            background: #fafafa;
+        }
+        .section h3 {
+            font-size: 13px;
+            color: #2c3e50;
+            margin-bottom: 6px;
+            border-bottom: 1px solid #3498db;
+            padding-bottom: 3px;
+        }
+        .party-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .party {
+            border: 1px solid #ecf0f1;
+            padding: 6px;
+            border-radius: 3px;
+            background: white;
+        }
+        .party h4 {
+            font-size: 11px;
+            color: #2c3e50;
+            margin-bottom: 4px;
+            text-align: center;
+        }
+        .input-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 3px;
+        }
+        .input-row label {
+            font-size: 10px;
+            min-width: 35px;
+            font-weight: bold;
+        }
+        input[type="text"], input[type="tel"], textarea {
+            flex: 1;
+            padding: 2px 4px;
+            border: 1px solid #ddd;
+            border-radius: 2px;
+            font-size: 10px;
+        }
+        textarea {
+            height: 30px;
+            resize: none;
+        }
+        .contract-line {
+            font-size: 10px;
+            margin-bottom: 4px;
+        }
+        .contract-line input {
+            width: 50px;
+            margin: 0 2px;
+        }
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10px;
+        }
+        .items-table th, .items-table td {
+            border: 1px solid #ddd;
+            padding: 3px;
+            text-align: left;
+        }
+        .items-table th {
+            background: #3498db;
+            color: white;
+            font-size: 9px;
+        }
+        .checkbox-mini {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .checkbox-mini label {
+            font-size: 9px;
+            min-width: auto;
+        }
+        .checkbox-mini input {
+            margin-right: 2px;
+        }
+        .finance-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10px;
+            margin-bottom: 8px;
+        }
+        .finance-table th, .finance-table td {
+            border: 1px solid #ddd;
+            padding: 4px;
+        }
+        .finance-table th {
+            background: #f39c12;
+            color: white;
+            font-size: 9px;
+        }
+        .signature-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .signature-box {
+            border: 1px solid #bdc3c7;
+            border-radius: 3px;
+            padding: 6px;
+            text-align: center;
+            background: white;
+        }
+        .signature-box h4 {
+            font-size: 10px;
+            margin-bottom: 4px;
+        }
+        .signature-pad {
+            border: 1px solid #ddd;
+            border-radius: 2px;
+            cursor: crosshair;
+            background: white;
+            width: 100%;
+            height: 60px;
+        }
+        .control-btn {
+            background: #95a5a6;
+            color: white;
+            border: none;
+            padding: 3px 8px;
+            border-radius: 2px;
+            cursor: pointer;
+            font-size: 9px;
+            margin: 2px;
+        }
+        .control-btn:hover { background: #7f8c8d; }
+        .date-inputs {
+            margin-top: 4px;
+            font-size: 9px;
+        }
+        .date-inputs input {
+            width: 25px;
+            margin: 0 1px;
+        }
+        .signature-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .signature-modal.active {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            max-width: 600px;
+            width: 90%;
+            text-align: center;
+        }
+        .modal-signature-pad {
+            border: 2px solid #3498db;
+            border-radius: 4px;
+            cursor: crosshair;
+            background: white;
+            width: 100%;
+            height: 200px;
+            margin: 15px 0;
+        }
+        .modal-controls {
+            margin-top: 15px;
+        }
+        .modal-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 0 5px;
+        }
+        .modal-btn:hover {
+            background: #2980b9;
+        }
+        .modal-btn.cancel {
+            background: #e74c3c;
+        }
+        .modal-btn.cancel:hover {
+            background: #c0392b;
+        }
+        .workflow-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: white;
+            border: 2px solid #3498db;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            max-width: 300px;
+            z-index: 100;
+        }
+        .workflow-step {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 12px;
+        }
+        .step-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 10px;
+        }
+        .step-pending { background: #ecf0f1; color: #7f8c8d; }
+        .step-active { background: #3498db; color: white; }
+        .step-completed { background: #27ae60; color: white; }
+        .share-link-container {
+            background: #e8f6f3;
+            border: 1px solid #27ae60;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+        .share-link {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            padding: 8px;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 10px;
+            word-break: break-all;
+            margin: 5px 0;
+        }
+        .copy-btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 10px;
+            margin-top: 5px;
+        }
+        .copy-btn:hover { background: #229954; }
+        .locked-field {
+            background: #f8f9fa !important;
+            color: #6c757d !important;
+            pointer-events: none;
+        }
+        .locked-signature {
+            pointer-events: none;
+            opacity: 0.8;
+            position: relative;
+        }
+        .locked-signature::after {
+            content: '✓ 已簽名';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(39, 174, 96, 0.9);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 9px;
+            pointer-events: none;
+        }
+        .print-btn {
+            background: #3498db;
+            color: white;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 11px;
+            margin: 5px auto 0;
+            display: block;
+        }
+        .print-btn:hover { background: #2980b9; }
+        @media print {
+            .print-btn { display: none; }
+            .container { height: auto; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 流程狀態面板 -->
+    <div id="workflowPanel" class="workflow-panel">
+        <h4 style="margin: 0 0 10px 0; font-size: 13px; color: #2c3e50;">簽名流程</h4>
+        <div class="workflow-step">
+            <div id="step1" class="step-indicator step-active">1</div>
+            <span id="step1Text">出租人填寫並簽名</span>
+        </div>
+        <div class="workflow-step">
+            <div id="step2" class="step-indicator step-pending">2</div>
+            <span id="step2Text">傳送給承租人</span>
+        </div>
+        <div class="workflow-step">
+            <div id="step3" class="step-indicator step-pending">3</div>
+            <span id="step3Text">承租人簽名</span>
+        </div>
+        <div class="workflow-step">
+            <div id="step4" class="step-indicator step-pending">4</div>
+            <span id="step4Text">完成文件</span>
+        </div>
+        <div id="shareLinkContainer"></div>
+    </div>
+
+    <div class="container">
+        <div class="version">版本：ver.2025-06-24.001</div>
+        <h1>房屋點交及費用結算確認書</h1>
+
+        <div class="main-content">
+            <div class="left-panel">
+                <!-- 當事人資訊 -->
+                <div class="section">
+                    <h3>當事人資訊</h3>
+                    <div class="party-grid">
+                        <div class="party">
+                            <h4>出租人（甲方）</h4>
+                            <div class="input-row">
+                                <label>姓名：</label>
+                                <input type="text">
+                            </div>
+                            <div class="input-row">
+                                <label>身分證：</label>
+                                <input type="text">
+                            </div>
+                            <div class="input-row">
+                                <label>電話：</label>
+                                <input type="tel">
+                            </div>
+                            <div class="input-row">
+                                <label>地址：</label>
+                                <textarea></textarea>
+                            </div>
+                        </div>
+                        <div class="party">
+                            <h4>承租人（乙方）</h4>
+                            <div class="input-row">
+                                <label>姓名：</label>
+                                <input type="text">
+                            </div>
+                            <div class="input-row">
+                                <label>身分證：</label>
+                                <input type="text">
+                            </div>
+                            <div class="input-row">
+                                <label>電話：</label>
+                                <input type="tel">
+                            </div>
+                            <div class="input-row">
+                                <label>地址：</label>
+                                <textarea></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="contract-line">
+                        雙方於民國 <input type="text" value="114">年<input type="text" value="6">月<input type="text" value="24">日簽約，
+                        租賃物：<input type="text" style="width:200px;" placeholder="完整地址">
+                        點交日：民國 <input type="text" value="114">年<input type="text" value="6">月<input type="text" value="24">日
+                    </div>
+                </div>
+
+                <!-- 設備狀況 -->
+                <div class="section" style="flex: 1;">
+                    <h3>設備點交狀況</h3>
+                    <table class="items-table">
+                        <thead>
+                            <tr>
+                                <th style="width:20%">項目</th>
+                                <th style="width:50%">狀況</th>
+                                <th style="width:30%">備註</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>清潔</strong></td>
+                                <td>
+                                    <div class="checkbox-mini">
+                                        <label><input type="checkbox">良好</label>
+                                        <label><input type="checkbox">一般</label>
+                                        <label><input type="checkbox">待清潔</label>
+                                    </div>
+                                </td>
+                                <td><input type="text" style="width:100%;"></td>
+                            </tr>
+                            <tr>
+                                <td><strong>牆壁</strong></td>
+                                <td>
+                                    <div class="checkbox-mini">
+                                        <label><input type="checkbox">完整</label>
+                                        <label><input type="checkbox">污損</label>
+                                        <label><input type="checkbox">破損</label>
+                                    </div>
+                                </td>
+                                <td><input type="text" style="width:100%;"></td>
+                            </tr>
+                            <tr>
+                                <td><strong>地板</strong></td>
+                                <td>
+                                    <div class="checkbox-mini">
+                                        <label><input type="checkbox">完好</label>
+                                        <label><input type="checkbox">刮痕</label>
+                                        <label><input type="checkbox">破損</label>
+                                    </div>
+                                </td>
+                                <td><input type="text" style="width:100%;"></td>
+                            </tr>
+                            <tr>
+                                <td><strong>門窗</strong></td>
+                                <td>
+                                    <div class="checkbox-mini">
+                                        <label><input type="checkbox">正常</label>
+                                        <label><input type="checkbox">破損</label>
+                                    </div>
+                                </td>
+                                <td><input type="text" style="width:100%;"></td>
+                            </tr>
+                            <tr>
+                                <td><strong>燈具</strong></td>
+                                <td>
+                                    <div class="checkbox-mini">
+                                        <label><input type="checkbox">正常</label>
+                                        <label><input type="checkbox">不亮</label>
+                                        <label><input type="checkbox">損壞</label>
+                                    </div>
+                                </td>
+                                <td><input type="text" style="width:100%;"></td>
+                            </tr>
+                            <tr>
+                                <td><strong>冷氣</strong></td>
+                                <td>
+                                    <div class="checkbox-mini">
+                                        <label><input type="checkbox">正常</label>
+                                        <label><input type="checkbox">不冷</label>
+                                        <label><input type="checkbox">故障</label>
+                                    </div>
+                                </td>
+                                <td><input type="text" style="width:100%;"></td>
+                            </tr>
+                            <tr>
+                                <td><strong>熱水器</strong></td>
+                                <td>
+                                    <div class="checkbox-mini">
+                                        <label><input type="checkbox">正常</label>
+                                        <label><input type="checkbox">故障</label>
+                                    </div>
+                                </td>
+                                <td><input type="text" style="width:100%;"></td>
+                            </tr>
+                            <tr>
+                                <td><strong>衛浴</strong></td>
+                                <td>
+                                    <div class="checkbox-mini">
+                                        <label><input type="checkbox">正常</label>
+                                        <label><input type="checkbox">堵塞</label>
+                                        <label><input type="checkbox">破損</label>
+                                    </div>
+                                </td>
+                                <td><input type="text" style="width:100%;"></td>
+                            </tr>
+                            <tr>
+                                <td><strong>廚具</strong></td>
+                                <td>
+                                    <div class="checkbox-mini">
+                                        <label><input type="checkbox">正常</label>
+                                        <label><input type="checkbox">堵塞</label>
+                                        <label><input type="checkbox">破損</label>
+                                    </div>
+                                </td>
+                                <td><input type="text" style="width:100%;"></td>
+                            </tr>
+                            <tr>
+                                <td><strong>鑰匙</strong></td>
+                                <td>
+                                    共<input type="text" style="width:20px;">把
+                                    <div class="checkbox-mini" style="margin-top:2px;">
+                                        <label><input type="checkbox">房門</label>
+                                        <label><input type="checkbox">大門</label>
+                                        <label><input type="checkbox">信箱</label>
+                                        <label><input type="checkbox">門禁卡</label>
+                                    </div>
+                                </td>
+                                <td><input type="text" style="width:100%;"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="right-panel">
+                <!-- 費用結算 -->
+                <div class="section">
+                    <h3>費用結算</h3>
+                    <table class="finance-table">
+                        <thead>
+                            <tr>
+                                <th style="width:30%">項目</th>
+                                <th style="width:25%">金額</th>
+                                <th style="width:45%">說明</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>押金</strong></td>
+                                <td>NT$ <input type="text" style="width:60px;"></td>
+                                <td><input type="text" style="width:100%;"></td>
+                            </tr>
+                            <tr>
+                                <td><strong>修繕費</strong></td>
+                                <td>NT$ <input type="text" style="width:60px;"></td>
+                                <td><input type="text" style="width:100%;"></td>
+                            </tr>
+                            <tr>
+                                <td><strong>代繳費</strong></td>
+                                <td>NT$ <input type="text" style="width:60px;"></td>
+                                <td><input type="text" style="width:100%;" placeholder="水電瓦斯"></td>
+                            </tr>
+                            <tr style="background:#fff3cd; font-weight:bold;">
+                                <td><strong>退還金額</strong></td>
+                                <td>NT$ <input type="text" style="width:60px;"></td>
+                                <td><input type="text" style="width:100%;"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 簽名區 -->
+                <div class="section" style="flex: 1;">
+                    <h3>雙方簽名確認</h3>
+                    <div class="signature-grid">
+                        <div class="signature-box">
+                            <h4>出租人簽名</h4>
+                            <canvas id="landlordSignature" class="signature-pad" onclick="openSignatureModal('landlord')"></canvas>
+                            <button type="button" class="control-btn" onclick="clearSignature('landlordSignature')">清除</button>
+                            <div class="date-inputs">
+                                日期：<input type="text" value="114">年<input type="text" value="6">月<input type="text" value="24">日
+                            </div>
+                        </div>
+                        <div class="signature-box">
+                            <h4>承租人簽名</h4>
+                            <canvas id="tenantSignature" class="signature-pad" onclick="openSignatureModal('tenant')"></canvas>
+                            <button type="button" class="control-btn" onclick="clearSignature('tenantSignature')">清除</button>
+                            <div class="date-inputs">
+                                日期：<input type="text" value="114">年<input type="text" value="6">月<input type="text" value="24">日
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 其他設備 -->
+                <div class="section">
+                    <h3>其他設備/備註</h3>
+                    <textarea style="width:100%; height:80px; resize:none;" placeholder="家具、家電或其他特殊設備狀況..."></textarea>
+                </div>
+            </div>
+        </div>
+
+        <button class="print-btn" onclick="window.print()">列印表格</button>
+    </div>
+
+    <!-- 簽名彈窗 -->
+    <div id="signatureModal" class="signature-modal">
+        <div class="modal-content">
+            <h3 id="modalTitle">簽名區域</h3>
+            <canvas id="modalSignaturePad" class="modal-signature-pad"></canvas>
+            <div class="modal-controls">
+                <button type="button" class="modal-btn" onclick="clearModalSignature()">清除</button>
+                <button type="button" class="modal-btn" onclick="saveSignature()">完成</button>
+                <button type="button" class="modal-btn cancel" onclick="closeSignatureModal()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentSignatureTarget = null;
+        let modalSignaturePad = null;
+        let currentSession = null;
+        let workflowStep = 'landlord'; // landlord, tenant, completed
+        
+        // 工作流程管理
+        const WorkflowManager = {
+            init() {
+                // 檢查URL參數確定當前步驟
+                const urlParams = new URLSearchParams(window.location.search);
+                const step = urlParams.get('step');
+                const data = urlParams.get('data');
+                
+                if (data && step) {
+                    this.loadFromURL(data, step);
+                } else {
+                    this.startNewSession();
+                }
+                
+                this.updateUI();
+            },
+            
+            startNewSession() {
+                currentSession = this.generateSessionId();
+                workflowStep = 'landlord';
+            },
+            
+            loadFromURL(encodedData, step) {
+                try {
+                    workflowStep = step;
+                    const data = JSON.parse(atob(encodedData));
+                    this.loadFormData(data);
+                    
+                    if (step === 'tenant') {
+                        this.lockLandlordFields();
+                    } else if (step === 'completed') {
+                        this.lockAllFields();
+                    }
+                } catch (error) {
+                    alert('連結資料錯誤，請重新開始');
+                    this.startNewSession();
+                }
+            },
+            
+            generateSessionId() {
+                return 'contract_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            },
+            
+            getFormData() {
+                const form = document.querySelector('.container');
+                const inputs = form.querySelectorAll('input, textarea');
+                const data = { signatures: {} };
+                
+                inputs.forEach(input => {
+                    if (input.name || input.id) {
+                        data[input.name || input.id] = input.value;
+                    }
+                });
+                
+                // 保存簽名
+                const landlordCanvas = document.getElementById('landlordSignature');
+                const tenantCanvas = document.getElementById('tenantSignature');
+                
+                if (landlordCanvas && !this.isCanvasEmpty(landlordCanvas)) {
+                    data.signatures.landlord = landlordCanvas.toDataURL();
+                }
+                
+                if (tenantCanvas && !this.isCanvasEmpty(tenantCanvas)) {
+                    data.signatures.tenant = tenantCanvas.toDataURL();
+                }
+                
+                data.step = workflowStep;
+                data.sessionId = currentSession;
+                data.lastModified = new Date().toISOString();
+                
+                return data;
+            },
+            
+            loadFormData(data) {
+                // 載入表單資料
+                Object.keys(data).forEach(key => {
+                    if (key !== 'signatures' && key !== 'step' && key !== 'sessionId' && key !== 'lastModified') {
+                        const element = document.querySelector(`[name="${key}"], #${key}`);
+                        if (element) {
+                            element.value = data[key] || '';
+                        }
+                    }
+                });
+                
+                // 載入簽名
+                if (data.signatures) {
+                    if (data.signatures.landlord) {
+                        this.loadSignatureToCanvas('landlordSignature', data.signatures.landlord);
+                    }
+                    if (data.signatures.tenant) {
+                        this.loadSignatureToCanvas('tenantSignature', data.signatures.tenant);
+                    }
+                }
+            },
+            
+            loadSignatureToCanvas(canvasId, dataURL) {
+                const canvas = document.getElementById(canvasId);
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+                
+                img.onload = function() {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                };
+                img.src = dataURL;
+            },
+            
+            isCanvasEmpty(canvas) {
+                const ctx = canvas.getContext('2d');
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                return !imageData.data.some(channel => channel !== 0);
+            },
+            
+            compressData(data) {
+                // 簡化資料以減少URL長度
+                const compressed = {};
+                
+                // 只保存有值的欄位
+                Object.keys(data).forEach(key => {
+                    if (data[key] && data[key] !== '') {
+                        compressed[key] = data[key];
+                    }
+                });
+                
+                // 壓縮簽名（降低畫質）
+                if (data.signatures) {
+                    compressed.signatures = {};
+                    if (data.signatures.landlord) {
+                        compressed.signatures.landlord = this.compressSignature(data.signatures.landlord);
+                    }
+                    if (data.signatures.tenant) {
+                        compressed.signatures.tenant = this.compressSignature(data.signatures.tenant);
+                    }
+                }
+                
+                return compressed;
+            },
+            
+            compressSignature(dataURL) {
+                // 創建臨時canvas壓縮簽名
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+                
+                canvas.width = 200;  // 減小尺寸
+                canvas.height = 80;
+                
+                img.onload = function() {
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                };
+                img.src = dataURL;
+                
+                return canvas.toDataURL('image/jpeg', 0.5);  // 降低品質
+            },
+            
+            landlordCompleted() {
+                workflowStep = 'tenant';
+                this.generateTenantLink();
+                this.updateUI();
+            },
+            
+            tenantCompleted() {
+                workflowStep = 'completed';
+                this.generateFinalLink();
+                this.updateUI();
+            },
+            
+            generateTenantLink() {
+                const formData = this.compressData(this.getFormData());
+                const encodedData = btoa(JSON.stringify(formData));
+                const baseUrl = window.location.origin + window.location.pathname;
+                const tenantLink = `${baseUrl}?data=${encodedData}&step=tenant`;
+                
+                if (tenantLink.length > 2000) {
+                    this.showLongURLWarning();
+                } else {
+                    this.showShareLink('傳送給承租人簽名：', tenantLink);
+                }
+            },
+            
+            generateFinalLink() {
+                const formData = this.compressData(this.getFormData());
+                const encodedData = btoa(JSON.stringify(formData));
+                const baseUrl = window.location.origin + window.location.pathname;
+                const finalLink = `${baseUrl}?data=${encodedData}&step=completed`;
+                
+                this.showShareLink('完成文件連結：', finalLink);
+            },
+            
+            showLongURLWarning() {
+                const container = document.getElementById('shareLinkContainer');
+                container.innerHTML = `
+                    <div class="share-link-container" style="background: #fff3cd; border-color: #ffc107;">
+                        <div style="font-size: 11px; font-weight: bold; margin-bottom: 5px; color: #856404;">⚠️ 資料過多</div>
+                        <div style="font-size: 10px; color: #856404;">
+                            請減少填寫內容或考慮使用其他分享方式
+                        </div>
+                        <button class="copy-btn" onclick="WorkflowManager.generateSimpleLink()" style="background: #ffc107; color: #212529;">產生簡化連結</button>
+                    </div>
+                `;
+            },
+            
+            generateSimpleLink() {
+                // 產生只包含基本資料的連結
+                const basicData = {
+                    signatures: this.getFormData().signatures,
+                    step: 'tenant'
+                };
+                const encodedData = btoa(JSON.stringify(basicData));
+                const baseUrl = window.location.origin + window.location.pathname;
+                const simpleLink = `${baseUrl}?data=${encodedData}&step=tenant`;
+                
+                this.showShareLink('簡化連結（承租人需重新填寫基本資料）：', simpleLink);
+            },
+            
+            showShareLink(title, link) {
+                const container = document.getElementById('shareLinkContainer');
+                const linkPreview = link.length > 100 ? link.substring(0, 100) + '...' : link;
+                
+                container.innerHTML = `
+                    <div class="share-link-container">
+                        <div style="font-size: 11px; font-weight: bold; margin-bottom: 5px;">${title}</div>
+                        <div class="share-link">${linkPreview}</div>
+                        <div style="font-size: 9px; color: #666; margin: 2px 0;">連結長度: ${link.length} 字元</div>
+                        <button class="copy-btn" onclick="WorkflowManager.copyToClipboard('${link}')">複製完整連結</button>
+                        <button class="copy-btn" onclick="WorkflowManager.generateQRCode('${link}')" style="background: #9b59b6;">產生QR碼</button>
+                    </div>
+                `;
+            },
+            
+            generateQRCode(url) {
+                if (url.length > 1000) {
+                    alert('連結太長，建議使用簡化連結或其他分享方式');
+                    return;
+                }
+                
+                // 簡單的QR碼產生（實際應用中可使用 qrcode.js 庫）
+                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
+                
+                const container = document.getElementById('shareLinkContainer');
+                container.innerHTML += `
+                    <div style="margin-top: 10px; text-align: center;">
+                        <div style="font-size: 10px; margin-bottom: 5px;">QR碼分享：</div>
+                        <img src="${qrUrl}" style="max-width: 150px; border: 1px solid #ddd;">
+                        <div style="font-size: 9px; color: #666; margin-top: 5px;">承租人掃描此QR碼即可開啟表格</div>
+                    </div>
+                `;
+            },
+            
+            copyToClipboard(text) {
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        alert('連結已複製！可以傳送給承租人了。');
+                    });
+                } else {
+                    // 備用方案
+                    const textArea = document.createElement('textarea');
+                    textArea.value = text;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    alert('連結已複製！');
+                }
+            },
+            
+            lockLandlordFields() {
+                // 鎖定出租人相關欄位
+                const landlordInputs = document.querySelectorAll('[name*="landlord"], [name*="contract"]');
+                landlordInputs.forEach(input => input.classList.add('locked-field'));
+                
+                const landlordSignature = document.getElementById('landlordSignature');
+                if (landlordSignature) {
+                    landlordSignature.classList.add('locked-signature');
+                    landlordSignature.onclick = null;
+                }
+            },
+            
+            lockAllFields() {
+                const allInputs = document.querySelectorAll('input, textarea');
+                allInputs.forEach(input => input.classList.add('locked-field'));
+                
+                const signatures = document.querySelectorAll('.signature-pad');
+                signatures.forEach(sig => {
+                    sig.classList.add('locked-signature');
+                    sig.onclick = null;
+                });
+                
+                document.querySelector('.print-btn').style.display = 'block';
+            },
+            
+            updateUI() {
+                // 更新步驟指示器
+                const steps = ['step1', 'step2', 'step3', 'step4'];
+                const stepTexts = ['step1Text', 'step2Text', 'step3Text', 'step4Text'];
+                
+                steps.forEach((stepId, index) => {
+                    const element = document.getElementById(stepId);
+                    element.className = 'step-indicator step-pending';
+                });
+                
+                if (workflowStep === 'landlord') {
+                    document.getElementById('step1').className = 'step-indicator step-active';
+                } else if (workflowStep === 'tenant') {
+                    document.getElementById('step1').className = 'step-indicator step-completed';
+                    document.getElementById('step2').className = 'step-indicator step-completed';
+                    document.getElementById('step3').className = 'step-indicator step-active';
+                } else if (workflowStep === 'completed') {
+                    steps.forEach(stepId => {
+                        document.getElementById(stepId).className = 'step-indicator step-completed';
+                    });
+                }
+                
+                // 隱藏列印按鈕直到完成
+                if (workflowStep !== 'completed') {
+                    document.querySelector('.print-btn').style.display = 'none';
+                }
+            }
+        };
+
+        function setupSignaturePad(canvasId) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            let isDrawing = false;
+            let lastX = 0;
+            let lastY = 0;
+
+            // 設定canvas實際大小
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 1.5;
+            ctx.lineCap = 'round';
+
+            function startDrawing(e) {
+                isDrawing = true;
+                const rect = canvas.getBoundingClientRect();
+                lastX = (e.clientX || e.touches[0].clientX) - rect.left;
+                lastY = (e.clientY || e.touches[0].clientY) - rect.top;
+            }
+
+            function draw(e) {
+                if (!isDrawing) return;
+                e.preventDefault();
+                
+                const rect = canvas.getBoundingClientRect();
+                const currentX = (e.clientX || e.touches[0].clientX) - rect.left;
+                const currentY = (e.clientY || e.touches[0].clientY) - rect.top;
+
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(currentX, currentY);
+                ctx.stroke();
+
+                lastX = currentX;
+                lastY = currentY;
+            }
+
+            function stopDrawing() {
+                isDrawing = false;
+            }
+
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseout', stopDrawing);
+            canvas.addEventListener('touchstart', startDrawing);
+            canvas.addEventListener('touchmove', draw);
+            canvas.addEventListener('touchend', stopDrawing);
+
+            return { ctx, canvas };
+        }
+
+        function setupModalSignaturePad() {
+            const canvas = document.getElementById('modalSignaturePad');
+            const ctx = canvas.getContext('2d');
+            let isDrawing = false;
+            let lastX = 0;
+            let lastY = 0;
+
+            // 設定canvas實際大小
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+
+            function startDrawing(e) {
+                isDrawing = true;
+                const rect = canvas.getBoundingClientRect();
+                lastX = (e.clientX || e.touches[0].clientX) - rect.left;
+                lastY = (e.clientY || e.touches[0].clientY) - rect.top;
+            }
+
+            function draw(e) {
+                if (!isDrawing) return;
+                e.preventDefault();
+                
+                const rect = canvas.getBoundingClientRect();
+                const currentX = (e.clientX || e.touches[0].clientX) - rect.left;
+                const currentY = (e.clientY || e.touches[0].clientY) - rect.top;
+
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(currentX, currentY);
+                ctx.stroke();
+
+                lastX = currentX;
+                lastY = currentY;
+            }
+
+            function stopDrawing() {
+                isDrawing = false;
+            }
+
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseout', stopDrawing);
+            canvas.addEventListener('touchstart', startDrawing);
+            canvas.addEventListener('touchmove', draw);
+            canvas.addEventListener('touchend', stopDrawing);
+
+            return { ctx, canvas };
+        }
+
+        function openSignatureModal(type) {
+            // 檢查是否允許簽名
+            if (workflowStep === 'landlord' && type === 'tenant') {
+                alert('請先完成出租人簽名！');
+                return;
+            }
+            
+            if (workflowStep === 'tenant' && type === 'landlord') {
+                alert('出租人已完成簽名，無法修改！');
+                return;
+            }
+            
+            if (workflowStep === 'completed') {
+                alert('文件已完成，無法修改簽名！');
+                return;
+            }
+            
+            currentSignatureTarget = type;
+            const modal = document.getElementById('signatureModal');
+            const title = document.getElementById('modalTitle');
+            
+            title.textContent = type === 'landlord' ? '出租人簽名' : '承租人簽名';
+            modal.classList.add('active');
+            
+            // 重新設定modal簽名板
+            setTimeout(() => {
+                modalSignaturePad = setupModalSignaturePad();
+            }, 100);
+        }
+
+        function closeSignatureModal() {
+            const modal = document.getElementById('signatureModal');
+            modal.classList.remove('active');
+            currentSignatureTarget = null;
+        }
+
+        function clearModalSignature() {
+            if (modalSignaturePad) {
+                modalSignaturePad.ctx.clearRect(0, 0, modalSignaturePad.canvas.width, modalSignaturePad.canvas.height);
+            }
+        }
+
+        function saveSignature() {
+            if (!currentSignatureTarget || !modalSignaturePad) return;
+            
+            const modalCanvas = modalSignaturePad.canvas;
+            const targetCanvasId = currentSignatureTarget === 'landlord' ? 'landlordSignature' : 'tenantSignature';
+            const targetCanvas = document.getElementById(targetCanvasId);
+            const targetCtx = targetCanvas.getContext('2d');
+            
+            // 清除目標canvas
+            targetCtx.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
+            
+            // 縮放並複製簽名
+            targetCtx.drawImage(modalCanvas, 0, 0, targetCanvas.width, targetCanvas.height);
+            
+            // 保存並檢查流程
+            if (currentSignatureTarget === 'landlord' && workflowStep === 'landlord') {
+                // 出租人簽完，進入下一步
+                WorkflowManager.landlordCompleted();
+            } else if (currentSignatureTarget === 'tenant' && workflowStep === 'tenant') {
+                // 承租人簽完，完成流程
+                WorkflowManager.tenantCompleted();
+            }
+            
+            closeSignatureModal();
+        }
+
+        function clearSignature(canvasId) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // 監聽表單變化（URL版本不需要自動保存）
+        function setupAutoSave() {
+            // URL版本不需要自動保存，移除此功能
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            WorkflowManager.init();
+            setupSignaturePad('landlordSignature');
+            setupSignaturePad('tenantSignature');
+            setupAutoSave();
+            
+            // ESC鍵關閉彈窗
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeSignatureModal();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
