@@ -74,11 +74,10 @@
       }
       const token = btoa(`${pwd}|${Date.now()}`);
 
-      // targetUrl 現在是一個固定的字串，不再是動態插入
-      // const targetUrl = "https://fami8nanatoken.sirii.cf"; 
-      const targetUrl = "https://buy.sirii.cf/fami8nana.html"; 
+      // targetUrl 現在是一個固定的字串
+      const targetUrl = "https://buy.sirii.cf/fami8nana.html"; 
 
-      top.location.replace(`${targetUrl}?token=${encodeURIComponent(token)}`);     }
+      top.location.replace(`${targetUrl}?token=${encodeURIComponent(token)}`);     }
   </script>
 </body>
 </html>
