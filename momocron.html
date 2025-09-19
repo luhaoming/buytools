@@ -77,4 +77,64 @@ https://momo.dm/7E73Ev</textarea>
           end = hours[i];
         } else {
           if (end - start >= 2) {
-            simplifiedHours.push(`${start
+            simplifiedHours.push(`${start}-${end}`);
+          } else {
+            for (let j = start; j <= end; j++) {
+              simplifiedHours.push(j.toString());
+            }
+          }
+          start = hours[i];
+          end = hours[i];
+        }
+      }
+      if (end - start >= 2) {
+        simplifiedHours.push(`${start}-${end}`);
+      } else {
+        for (let j = start; j <= end; j++) {
+          simplifiedHours.push(j.toString());
+        }
+      }
+      
+      const allHours = simplifiedHours.join(',');
+
+      const outputLines = [
+        `${comment}`,
+        `${cronMinute} ${allHours} * * * ( sleep 50 && ~/tasks/gchkin.sh redbag)`,
+        `${cronMinute} ${allHours} * * * ( sleep 55 && ~/tasks/gchkin.sh redbag)`
+      ];
+
+      document.getElementById('output').textContent = outputLines.filter(line => line).join('\n');
+    }
+
+    function copyToClipboardFallback() {
+      const outputElement = document.getElementById('output');
+      const textToCopy = outputElement.textContent;
+      
+      const textarea = document.createElement('textarea');
+      textarea.value = textToCopy;
+      document.body.appendChild(textarea);
+      textarea.select();
+      
+      try {
+        document.execCommand('copy');
+        const status = document.getElementById('copy-status');
+        status.textContent = '已複製!';
+        setTimeout(() => { status.textContent = ''; }, 2000); // 修正：移除多餘的括號
+      } catch (err) {
+        console.error('複製失敗', err);
+      }
+      document.body.removeChild(textarea);
+    }
+
+    const textarea = document.getElementById('input');
+    textarea.addEventListener('input', generateCron);
+    textarea.addEventListener('paste', generateCron);
+
+    const outputElement = document.getElementById('output');
+    outputElement.addEventListener('click', copyToClipboardFallback);
+
+    document.addEventListener('DOMContentLoaded', generateCron);
+  </script>
+
+</body>
+</html>
