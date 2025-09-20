@@ -27,7 +27,7 @@
             <a href="#" class="font-small font-black-5D677c" id="tipsAlert">不可折抵商品/服務？</a>
             <p class="font-small font-grey clickBig">點擊放大顯示</p>
           </div>
-          <p class="font-grey font-13 font-center expiretime">條碼載入中...</p>
+          <p class="font-grey font-13 font-center expiretime">條碼更新中...</p>
         </div>
       </div>
       <div class="bottom">
@@ -57,52 +57,28 @@
     </div>
   </div>
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const id = urlParams.get('id');
-      if (!id) {
-        document.querySelector('.expiretime').textContent = '缺少ID參數';
-        return;
-      }
+    // 更新畫面的函式
+    function updateDisplay(data) {
+      const { balance, barcode, expdate } = data;
+      document.querySelector('.balance').textContent = `$ ${balance}`;
+      document.querySelector('.balance-sub').textContent = `$ ${balance}`;
+      document.querySelector('.font-blue').textContent = expdate;
+      document.getElementById('barcode').src = barcode;
+    }
 
-      const apiUrl = `https://script.google.com/macros/s/AKfycby4mv4_xxC1Ft0vnfkBNelfmCaRLMleflPWX5P26j8eGSCw4cUgl8MrQIQqOB7BjRsK/exec?id=${id}`;
-
-      fetch(apiUrl)
-        .then(response => response.json())
-        .then(result => {
-          if (result.status !== 'success') {
-             console.error('API Error:', result);
-             return;
-          }
-          const { balance, barcode, expdate } = result.data;
-          
-          document.querySelector('.balance').textContent = `$ ${balance}`;
-          document.querySelector('.balance-sub').textContent = `$ ${balance}`;
-          document.querySelector('.font-blue').textContent = expdate;
-          document.getElementById('barcode').src = barcode;
-          
-          startCountdown();
-        })
-        .catch(error => console.error('Fetch Error:', error));
-    });
-
+    // 倒數計時函式
     function startCountdown() {
       const expireElement = document.querySelector('.expiretime');
       if (!expireElement) return;
 
       let totalSeconds = 1 * 60 + 54; // 1分54秒
-
       const timerInterval = setInterval(() => {
-        if (totalSeconds === 3) {
-          window.location.reload();
-        }
-
+        if (totalSeconds === 3) window.location.reload();
         if (totalSeconds <= 0) {
           clearInterval(timerInterval);
           expireElement.textContent = '條碼已過期';
           return;
         }
-
         totalSeconds--;
         const minutes = Math.floor(totalSeconds / 60);
         const seconds = totalSeconds % 60;
@@ -110,6 +86,43 @@
         expireElement.textContent = `條碼有效期限${minutes}:${formattedSeconds}`;
       }, 1000);
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      // 1. 先用預設資料顯示畫面
+      const preliminaryData = {
+        "balance": 9999,
+        "barcode": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIsAAACNCAYAAACHQIniAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAU5SURBVHhe7d0xTitLEIXh8lsFAUIIOXDECkAykUm8EDtlG8RsBAJCJLMCIgKEECJgF32Dd8cPFVT7uGgPfub/pEraPd0z1pFNaQZ5UEopBgj+8QNAZNB9sjw8PNjr66t/fauNRiMbDod+2MzMBoOBHzIzs9YfpOvu8/T0ZI+Pj354qx0cHNjx8bFZ+ev6+rqY2f+qFotFd/qf+LldtebXX7XPYrH4NHfb6/LyspRSCl9DkBEWyAgLZIQFsmU3dHNzY9Pp1L9uZmbj8dgP9eru7s4PmZnZYrGwk5MTP2yW6FKy1t3n/v7eTk9P/bDZFrzPFrzXl5eXdnFxoXVDP82fT1eZbqhWET9POSZS64Z+2ng8/nRORjeEDMICGWGBjLBARlggk1rnqA08Pz/3Q2lHR0d2dXXlh80q7Wmmde5L9J7VWufomPl8bs/Pz3447fb21g+ZmdnZ2dnmWufJZPJpbrZms5lffsnP7ap169yyIpnWeTabfZqbrclk4pdfonVGM4QFMsICGWGBjLBA9uvCUkoJK+LnKcfsol8XFuQRFsgIC2SEBTLCAtnOhsV3LV0NBoOwIn6ecswu2tmwoD3CAhlhgYywQEZYIPvWY5Xz+dwPfUvLxyoj0VqtRe9Z9rHKlqL3eaOPVfbFn09Xmccqa/zcTRyTeayyLzxWiWYIC2SEBTLCAhlhgUwKi7951nf9Fv66+66v2uaPpLAARliwDsICGWGBjLBAtryR+PT0ZO/v7/71rXZ4eGj7+/t+eKu9vb3Zy8uLH95qe3t7NhwO/wsLsApfQ5ARFsgIC2SEBTLCAtmyGxokbthlGqnMPpHM/q1F15M5t8xa0TGtlVL4ZIGOsEBGWCAjLJARFsi+1Q1l1P6y/2nRe1A75+iYjNo+kcz+mX2MTxasg7BARlggIyyQERbICAtkUusctVqZY2pq660r2j+zR7SWbWC9VjZxXnyyQEZYICMskBEWyAgLZNI/mUV/WdcOjY6pqa33lcwefVn3WqxyPS3Xqlm1D58skBEWyAgLZIQFMsICGWGBTGqdW8q0dJG+Tr12zplzqK23rsz+kdp5Ff4jEesgLJARFsgIC2SEBbLeu6G+RH/ZZy43Wqsms09GdG61/TPHGJ8sWAdhgYywQEZYICMskO3sDz1k/+L/SrRWTWafjOjcavtnjjH7d0IpK34xflur9ovxGX59pTL8GpuoTeBrCDLCAhlhgYywQEZYIJPCUkr50coYfPGL6KvK76tUxK/9sfrg92yxvxQWwAgL1kFYICMskBEWyJY3Em9ubmw6nfrXzf52Q1+Zz+d+6Fuurq78kFnlxtdisbCTkxM/bFY5JrqWrGifjOjcanv0ekx3k6h2IzEymUw+zc3WbDbzyy/5uV3VbiT6uV215tf/TkX8vJ86hq8hyAgLZIQFMsICGWGBbGfD8vFm38fyN9WU6ovfV9nfz+3KX7fyHqyys2FBe4QFMsICGWGBjLBARlh+gO9Ouor4eUrV+LlKGWHBOggLZIQFMsICGWGB7FuPVZ6fn/uhtKOjo6aPVUaitWqi67fG60VrRfN71z1Sl3mssi/+fLrKPFZZq4ifp1SGX0NZy89Vjon4Nfx6fA1BRlggIyyQERbICAtkUus8Ho/9UK/u7u78kNmK1jlqQ2uiFrW2VnRMTbRey7VaK0X8j8RtrW1onTP8GptYq3UVWmesg7BARlggIyyQLbuhh4cHe3199a9vtdFoZMPh0A+bJbuEqBuprRUdUxOt13Kt1kopu/sbiWiPryHICAtkfwAwdRwS0GJ8RAAAAABJRU5ErkJggg==",
+        "expdate": "這是展示畫面"
+      };
+      updateDisplay(preliminaryData);
+
+      // 2. 取得網址id
+      const urlParams = new URLSearchParams(window.location.search);
+      const id = urlParams.get('id');
+      if (!id) {
+        document.querySelector('.expiretime').textContent = '缺少ID參數';
+        return;
+      }
+
+      // 3. 呼叫API取得真實資料
+      const apiUrl = `https://script.google.com/macros/s/AKfycby4mv4_xxC1Ft0vnfkBNelfmCaRLMleflPWX5P26j8eGSCw4cUgl8MrQIQqOB7BjRsK/exec?id=${id}`;
+      fetch(apiUrl)
+        .then(response => response.json())
+        .then(result => {
+          if (result.status !== 'success') {
+             console.error('API Error:', result);
+             document.querySelector('.expiretime').textContent = 'API讀取失敗';
+             return;
+          }
+          // 4. 更新畫面並啟動倒數
+          updateDisplay(result.data);
+          startCountdown();
+        })
+        .catch(error => {
+            console.error('Fetch Error:', error);
+            document.querySelector('.expiretime').textContent = '網路連線失敗';
+        });
+    });
   </script>
 </body>
 </html>
