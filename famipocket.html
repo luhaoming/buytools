@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link rel="stylesheet" href="https://mypocket.family.com.tw/static/v2/css/balanceQrcode.css">
+  <link rel="stylesheet" href="https://mypocket.family.com.tw/static/v2/css/common.css">
+  <title>酷碰卷</title>
+</head>
+<body>
+  <div class="kp-container">
+    <span class="close" onclick="window.location.href='/pincode_list?type=1'"></span>
+    <div class="content">
+      <div class="top">
+        <div class="img">
+          <img src="https://mypocket.fami.life/static/v2/images/gold.png" alt="">
+        </div>
+        <p class="font-normal font-center font-black font-bold">紅利金餘額</p>
+        <p class="font-orange font-30 balance font-center">$</p>
+        <div>
+          <p class="font-normal font-blue font-center"></p>
+          <div class="barcode">
+            <img id="barcode" src="" alt="barcode" srcset="">
+          </div>
+          <div class="tips flex flex-between">
+            <a href="#" class="font-small font-black-5D677c" id="tipsAlert">不可折抵商品/服務？</a>
+            <p class="font-small font-grey clickBig">點擊放大顯示</p>
+          </div>
+          <p class="font-grey font-13 font-center expiretime">條碼載入中...</p>
+        </div>
+      </div>
+      <div class="bottom">
+        <div class="flex flex-row flex-between">
+          <p class="font-grey font-13">紅利金-不可折抵 點卡</p>
+          <p class="font-black-5D677c font-13 balance-sub">$</p>
+        </div>
+        <div class="flex flex-row flex-between" style="margin-top: 9px">
+          <p class="font-grey font-13">紅利金-可折抵 點卡</p>
+          <p class="font-black-5D677c font-13">$ 0</p>
+        </div>
+        <div class="warning font-13 font-black-5D677c">
+          <p class="font-bold">注意事項</p>
+          <div class="flex flex-row flex-end">
+            <ul class="flex-1">
+              <li style="overflow: unset;"><p>紅利金PIN碼一經使用，一律不接受退貨/退款。</p></li>
+              <li><p>紅利金PIN碼逾期將無效，且PIN碼逾期後將由系統自動扣除PIN碼剩餘金額，不得以任何理由要求補發或等值商品。</p></li>
+            </ul>
+            <a href="#" class="more font-black-5D677c">查看更多</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="button flex flex-row flex-between">
+      <a href="#" class="font-larger font-center font-white background-orange">查看記錄</a>
+      <a href="#" class="font-larger font-orange background-white font-center">完成兌換</a>
+    </div>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const id = urlParams.get('id');
+      if (!id) {
+        document.querySelector('.expiretime').textContent = '缺少ID參數';
+        return;
+      }
+
+      const apiUrl = `https://script.google.com/macros/s/AKfycby4mv4_xxC1Ft0vnfkBNelfmCaRLMleflPWX5P26j8eGSCw4cUgl8MrQIQqOB7BjRsK/exec?id=${id}`;
+
+      fetch(apiUrl)
+        .then(response => response.json())
+        .then(result => {
+          if (result.status !== 'success') {
+             console.error('API Error:', result);
+             return;
+          }
+          const { balance, barcode, expdate } = result.data;
+          
+          document.querySelector('.balance').textContent = `$ ${balance}`;
+          document.querySelector('.balance-sub').textContent = `$ ${balance}`;
+          document.querySelector('.font-blue').textContent = expdate;
+          document.getElementById('barcode').src = barcode;
+          
+          startCountdown();
+        })
+        .catch(error => console.error('Fetch Error:', error));
+    });
+
+    function startCountdown() {
+      const expireElement = document.querySelector('.expiretime');
+      if (!expireElement) return;
+
+      let totalSeconds = 1 * 60 + 54; // 1分54秒
+
+      const timerInterval = setInterval(() => {
+        if (totalSeconds === 3) {
+          window.location.reload();
+        }
+
+        if (totalSeconds <= 0) {
+          clearInterval(timerInterval);
+          expireElement.textContent = '條碼已過期';
+          return;
+        }
+
+        totalSeconds--;
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        const formattedSeconds = seconds < 10 ? '0' + seconds : seconds;
+        expireElement.textContent = `條碼有效期限${minutes}:${formattedSeconds}`;
+      }, 1000);
+    }
+  </script>
+</body>
+</html>
