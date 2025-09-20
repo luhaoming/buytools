@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Iframe Loader</title>
+  <style>
+    /* 讓 iframe 填滿整個畫面 */
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+  <!-- Iframe 初始網址 -->
+  <iframe id="contentFrame" src="https://script.google.com/macros/s/AKfycby4mv4_xxC1Ft0vnfkBNelfmCaRLMleflPWX5P26j8eGSCw4cUgl8MrQIQqOB7BjRsK/exec"></iframe>
+
+  <script>
+    // 當頁面載入完成後執行
+    document.addEventListener('DOMContentLoaded', function() {
+      const iframe = document.getElementById('contentFrame');
+      const baseUrl = iframe.src;
+      // 取得外層頁面的 GET 參數 (例如 "?user=123&token=abc")
+      const queryString = window.location.search;
+      
+      // 如果有 GET 參數，就將它附加到 iframe 的網址後面
+      if (queryString) {
+        iframe.src = baseUrl + queryString;
+      }
+    });
+  </script>
+</body>
+</html>
