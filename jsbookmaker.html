@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JS書籤工具產生器 ver=2025-10-09.001</title>
+<style>
+body{font-family:sans-serif;max-width:900px;margin:20px auto;padding:0 15px}
+.tool{border:1px solid #ccc;padding:15px;margin:15px 0;background:#f9f9f9}
+h3{margin-top:0}
+input,textarea{width:100%;box-sizing:border-box;margin:8px 0;padding:8px}
+textarea{min-height:100px;font-family:monospace;font-size:12px}
+button{padding:8px 20px;cursor:pointer}
+.desc{color:#666;font-size:14px;margin:5px 0}
+</style>
+</head>
+<body>
+
+<h1>JS書籤工具產生器</h1>
+
+<div class="tool">
+<h3>工具1: Base64編碼混淆</h3>
+<div class="desc">URL→16進位→Base64→混淆JS</div>
+<input id="url1" type="text" placeholder="輸入完整網址 (例: https://gs.sirii.cf/reloadtab)">
+<button onclick="gen1()">生成</button>
+<textarea id="out1" readonly></textarea>
+</div>
+
+<div class="tool">
+<h3>工具2: 16進位編碼混淆</h3>
+<div class="desc">Key→完整URL→16進位→混淆JS</div>
+<input id="key2" type="text" placeholder="輸入key (例: famisend)">
+<button onclick="gen2()">生成</button>
+<textarea id="out2" readonly></textarea>
+</div>
+
+<script>
+function gen1(){
+  const url=document.getElementById('url1').value.trim();
+  if(!url)return alert('請輸入網址');
+  const hexUrl=Array.from(url).map(c=>c.charCodeAt(0).toString(16).padStart(2,'0')).join('');
+  const base64Url=btoa(hexUrl.match(/.{1,2}/g).map(b=>String.fromCharCode(parseInt(b,16))).join(''));
+  const script=`(function(){const b64="${base64Url}";const u=atob(b64);fetch(eval(\`'\${u}'\`)).then(a=>a.text()).then(eval)})();`;
+  document.getElementById('out1').value=`javascript:${script}`;
+}
+
+function gen2(){
+  const ask=document.getElementById('key2').value.trim();
+  if(!ask)return alert('請輸入key');
+  const url=`https://gs.sirii.cf/${ask}`;
+  const hexUrl=Array.from(url).map(c=>c.charCodeAt(0).toString(16).padStart(2,'0')).join('');
+  const script=`(function(){const o="${hexUrl}";const u=o.match(/.{1,2}/g).map(e=>\`\\\\x\${e}\`).join('');fetch(eval(\`'\${u}'\`)).then(a=>a.text()).then(eval)})();`;
+  document.getElementById('out2').value=`javascript:${script}`;
+}
+</script>
+
+</body>
+</html>
