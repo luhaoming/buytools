@@ -6,7 +6,7 @@
     body { font-family: sans-serif; display: flex; justify-content: center; margin: 0; background-color: #f0f0f0; }
     .container { width: 90%; max-width: 600px; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); background-color: white; }
     textarea { width: 100%; height: 150px; box-sizing: border-box; }
-    pre#output { 
+    pre[id^="output"] {
       cursor: pointer;
       background-color: #f4f4f4;
       border: 1px solid #ccc;
@@ -14,127 +14,116 @@
       white-space: pre-wrap;
       word-wrap: break-word;
     }
-    .copy-message {
-      color: green;
-      margin-top: 5px;
-    }
+    .copy-message { color: green; margin-top: 5px; }
   </style>
 </head>
 <body>
-
   <div class="container">
     <h1>MOMO紅包排程產生器</h1>
-    <textarea id="input" placeholder="貼上活動資訊...">Momo猜箱賺mo幣9/19-9/22
-每人每日限玩一次
-
-09:30、10:30、12:30
-13:30、17:30、19:30
-20:30、21:30、22:30 
-https://momo.dm/7E73Ev</textarea>
+    <textarea id="input" placeholder="貼上活動資訊...">Momo好運抽抽樂~10/16
+10:00、13:00、17:00、21:00
+1小時可各抽第2次
+https://momo.dm/6qe66U</textarea>
     <br>
     <button onclick="generateCron()">產生排程</button>
-
-    <h2>產生結果</h2>
+    
+    <h2>產生結果 (提早一分鐘)</h2>
     <pre id="output"></pre>
+    
+    <h2>產生結果 (精準時間)</h2>
+    <pre id="output-exact"></pre>
+
     <div id="copy-status" class="copy-message"></div>
   </div>
 
   <script>
+    function simplifyHours(hours) {
+      if (hours.length === 0) return '';
+      // Sort and remove duplicates
+      const uniqueHours = [...new Set(hours)].sort((a, b) => a - b);
+      
+      const simplified = [];
+      let start = uniqueHours[0];
+      for (let i = 1; i <= uniqueHours.length; i++) {
+        if (i === uniqueHours.length || uniqueHours[i] !== uniqueHours[i-1] + 1) {
+          const end = uniqueHours[i-1];
+          simplified.push(start === end ? `${start}` : `${start}-${end}`);
+          if (i < uniqueHours.length) {
+            start = uniqueHours[i];
+          }
+        }
+      }
+      return simplified.join(',');
+    }
+
     function generateCron() {
       const content = document.getElementById('input').value;
+      if (!content) return;
+      
       const lines = content.split('\n');
       const commentLine = lines.find(line => line.trim().length > 0);
       const comment = commentLine ? `#${commentLine.trim()}` : '';
 
       const regex = /\d{2}:\d{2}/g;
-      const times = [];
-      let match;
-
-      while ((match = regex.exec(content)) !== null) {
-        times.push(match[0]);
-      }
+      const times = content.match(regex) || [];
 
       if (times.length === 0) {
         document.getElementById('output').textContent = '找不到時間資訊。';
+        document.getElementById('output-exact').textContent = '找不到時間資訊。';
         return;
       }
       
       const firstTime = times[0];
       const [firstHour, firstMinute] = firstTime.split(':').map(Number);
-      const cronMinute = (firstMinute - 1 + 60) % 60;
+      
+      const hoursEarly = [];
+      const hoursExact = [];
 
-      const hours = times.map(time => {
+      times.forEach(time => {
         const [hour, minute] = time.split(':').map(Number);
-        return (minute === 0) ? (hour - 1 + 24) % 24 : hour;
-      }).sort((a, b) => a - b);
+        hoursExact.push(hour);
+        const earlyHour = (minute === 0) ? (hour - 1 + 24) % 24 : hour;
+        hoursEarly.push(earlyHour);
+      });
       
-      const simplifiedHours = [];
-      let start = hours[0];
-      let end = hours[0];
+      const allHoursEarly = simplifyHours(hoursEarly);
+      const allHoursExact = simplifyHours(hoursExact);
 
-      for (let i = 1; i < hours.length; i++) {
-        if (hours[i] === end + 1) {
-          end = hours[i];
-        } else {
-          if (end - start >= 2) {
-            simplifiedHours.push(`${start}-${end}`);
-          } else {
-            for (let j = start; j <= end; j++) {
-              simplifiedHours.push(j.toString());
-            }
-          }
-          start = hours[i];
-          end = hours[i];
-        }
-      }
-      if (end - start >= 2) {
-        simplifiedHours.push(`${start}-${end}`);
-      } else {
-        for (let j = start; j <= end; j++) {
-          simplifiedHours.push(j.toString());
-        }
-      }
-      
-      const allHours = simplifiedHours.join(',');
-
-      const outputLines = [
+      // Output 1: Early (minute - 1)
+      const cronMinuteEarly = (firstMinute - 1 + 60) % 60;
+      const outputLinesEarly = [
         `${comment}`,
-        `${cronMinute} ${allHours} * * * ( sleep 50 && ~/tasks/gchkin.sh redbag)`,
-        `${cronMinute} ${allHours} * * * ( sleep 55 && ~/tasks/gchkin.sh redbag)`
+        `${cronMinuteEarly} ${allHoursEarly} * * * ( sleep 50 && ~/tasks/gchkin.sh redbag)`,
+        `${cronMinuteEarly} ${allHoursEarly} * * * ( sleep 55 && ~/tasks/gchkin.sh redbag)`
       ];
+      document.getElementById('output').textContent = outputLinesEarly.filter(Boolean).join('\n');
 
-      document.getElementById('output').textContent = outputLines.filter(line => line).join('\n');
+      // Output 2: Exact Time
+      const cronMinuteExact = firstMinute;
+      const outputLinesExact = [
+        `${comment}`,
+        `${cronMinuteExact} ${allHoursExact} * * * ~/tasks/gchkin.sh redbag`
+      ];
+      document.getElementById('output-exact').textContent = outputLinesExact.filter(Boolean).join('\n');
     }
 
-    function copyToClipboardFallback() {
-      const outputElement = document.getElementById('output');
-      const textToCopy = outputElement.textContent;
-      
-      const textarea = document.createElement('textarea');
-      textarea.value = textToCopy;
-      document.body.appendChild(textarea);
-      textarea.select();
-      
-      try {
-        document.execCommand('copy');
+    function copyOutput(elementId) {
+      const outputElement = document.getElementById(elementId);
+      navigator.clipboard.writeText(outputElement.textContent).then(() => {
         const status = document.getElementById('copy-status');
         status.textContent = '已複製!';
-        setTimeout(() => { status.textContent = ''; }, 2000); // 修正：移除多餘的括號
-      } catch (err) {
-        console.error('複製失敗', err);
-      }
-      document.body.removeChild(textarea);
+        setTimeout(() => { status.textContent = ''; }, 2000);
+      }).catch(err => console.error('複製失敗', err));
     }
 
     const textarea = document.getElementById('input');
     textarea.addEventListener('input', generateCron);
     textarea.addEventListener('paste', generateCron);
 
-    const outputElement = document.getElementById('output');
-    outputElement.addEventListener('click', copyToClipboardFallback);
-
+    document.getElementById('output').addEventListener('click', () => copyOutput('output'));
+    document.getElementById('output-exact').addEventListener('click', () => copyOutput('output-exact'));
+    
     document.addEventListener('DOMContentLoaded', generateCron);
   </script>
-
 </body>
 </html>
