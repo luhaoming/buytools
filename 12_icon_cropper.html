@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>12生肖精準裁切器 v2.0</title>
+    <style>
+        body { font-family: sans-serif; background: #333; color: #eee; text-align: center; padding: 20px; }
+        #main-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; }
+        #controls {
+            background: #444; padding: 20px; border-radius: 8px; text-align: left;
+            min-width: 300px; flex: 1; max-width: 400px;
+        }
+        #preview-container {
+            flex: 2; min-width: 300px; overflow: auto;
+            border: 2px solid #555; position: relative;
+        }
+        canvas#previewCanvas { max-width: 100%; height: auto; display: block; }
+        .slider-group { margin-bottom: 15px; border-bottom: 1px solid #555; padding-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-size: 0.9em; }
+        input[type="range"] { width: 100%; }
+        .val-disp { float: right; color: #ffa; }
+        #result { 
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; 
+            margin-top: 20px; padding: 20px; background: #222; border-radius: 8px;
+        }
+        .icon-box img { width: 100%; border: 1px solid #555; }
+        button#cutBtn {
+            width: 100%; padding: 15px; font-size: 1.2em; 
+            background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;
+        }
+        button#cutBtn:hover { background: #45a049; }
+        h3 { color: #4CAF50; margin-top: 0; }
+        .red-t { color: #ff6b6b; } .green-t { color: #69f0ae; }
+    </style>
+</head>
+<body>
+
+    <h2>🕵️‍♂️ 12生肖精準裁切器 v2.0</h2>
+
+    <div id="main-container">
+        <div id="controls">
+            <h3>⚙️ 設定控制台</h3>
+            <input type="file" id="fileInput" accept="image/*" style="margin-bottom: 20px;">
+            
+            <div class="slider-group">
+                <strong class="red-t">1. 紅色大外框 (鎖定整體)</strong><br><br>
+                <label>上邊界: <span class="val-disp" id="mtVal">0%</span></label>
+                <input type="range" id="marginTop" min="0" max="30" value="5" step="0.1">
+                <label>下邊界: <span class="val-disp" id="mbVal">0%</span></label>
+                <input type="range" id="marginBottom" min="0" max="30" value="5" step="0.1">
+                <label>左邊界: <span class="val-disp" id="mlVal">0%</span></label>
+                <input type="range" id="marginLeft" min="0" max="30" value="5" step="0.1">
+                <label>右邊界: <span class="val-disp" id="mrVal">0%</span></label>
+                <input type="range" id="marginRight" min="0" max="30" value="5" step="0.1">
+            </div>
+
+            <div class="slider-group">
+                <strong class="green-t">2. 綠色小內框 (去除文字)</strong><br><br>
+                <label>底部裁切: <span class="val-disp" id="cellCutVal">20%</span></label>
+                <input type="range" id="cellBottomCut" min="0" max="50" value="20" step="0.5">
+            </div>
+
+            <button id="cutBtn">✂️ 開始裁切生成</button>
+        </div>
+
+        <div id="preview-container">
+             <canvas id="previewCanvas"></canvas>
+        </div>
+    </div>
+
+    <div id="result"></div>
+
+    <script>
+        const fileIn = document.getElementById('fileInput');
+        const canvas = document.getElementById('previewCanvas');
+        const ctx = canvas.getContext('2d');
+        const resultGrid = document.getElementById('result');
+        let img = new Image();
+
+        // Sliders
+        const s_mt = document.getElementById('marginTop');
+        const s_mb = document.getElementById('marginBottom');
+        const s_ml = document.getElementById('marginLeft');
+        const s_mr = document.getElementById('marginRight');
+        const s_cbc = document.getElementById('cellBottomCut');
+
+        // Value displays
+        const v_mt = document.getElementById('mtVal');
+        const v_mb = document.getElementById('mbVal');
+        const v_ml = document.getElementById('mlVal');
+        const v_mr = document.getElementById('mrVal');
+        const v_cbc = document.getElementById('cellCutVal');
+
+        [s_mt, s_mb, s_ml, s_mr, s_cbc].forEach(el => el.addEventListener('input', updatePreview));
+        document.getElementById('cutBtn').addEventListener('click', generateIcons);
+
+        fileIn.addEventListener('change', (e) => {
+            if (!e.target.files[0]) return;
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                img.onload = () => updatePreview();
+                img.src = evt.target.result;
+            };
+            reader.readAsDataURL(e.target.files[0]);
+        });
+
+        function getParams() {
+            return {
+                mt: parseFloat(s_mt.value) / 100,
+                mb: parseFloat(s_mb.value) / 100,
+                ml: parseFloat(s_ml.value) / 100,
+                mr: parseFloat(s_mr.value) / 100,
+                cbc: parseFloat(s_cbc.value) / 100
+            };
+        }
+
+        function updatePreview() {
+            if (!img.src) return;
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+
+            const p = getParams();
+            // Update text displays
+            v_mt.innerText = s_mt.value + '%'; v_mb.innerText = s_mb.value + '%';
+            v_ml.innerText = s_ml.value + '%'; v_mr.innerText = s_mr.value + '%';
+            v_cbc.innerText = s_cbc.value + '%';
+
+            // Calculate Active Area
+            const activeX = img.width * p.ml;
+            const activeY = img.height * p.mt;
+            const activeW = img.width * (1 - p.ml - p.mr);
+            const activeH = img.height * (1 - p.mt - p.mb);
+
+            // Draw Red Outer Frame
+            ctx.strokeStyle = 'rgba(255, 50, 50, 0.8)';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(activeX, activeY, activeW, activeH);
+
+            // Calculate Grid
+            const cols = 4, rows = 3;
+            const cellW = activeW / cols;
+            const cellH = activeH / rows;
+
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const cx = activeX + c * cellW;
+                    const cy = activeY + r * cellH;
+                    
+                    // Draw Cell Grid (Light Red)
+                    ctx.strokeStyle = 'rgba(255, 100, 100, 0.3)';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(cx, cy, cellW, cellH);
+
+                    // Draw Green Final Crop Area
+                    const finalH = cellH * (1 - p.cbc);
+                    ctx.strokeStyle = '#69f0ae';
+                    ctx.lineWidth = 3;
+                    // Make it dashed for better visibility
+                    ctx.setLineDash([5, 3]);
+                    ctx.strokeRect(cx + 2, cy + 2, cellW - 4, finalH - 4);
+                    ctx.setLineDash([]);
+                }
+            }
+        }
+
+        function generateIcons() {
+            if (!img.src) return;
+            resultGrid.innerHTML = '';
+            const p = getParams();
+            const activeX = img.width * p.ml;
+            const activeY = img.height * p.mt;
+            const activeW = img.width * (1 - p.ml - p.mr);
+            const activeH = img.height * (1 - p.mt - p.mb);
+            const cols = 4, rows = 3;
+            const cellW = activeW / cols;
+            const cellH = activeH / rows;
+            const finalH = cellH * (1 - p.cbc);
+
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = cellW;
+                    canvas.height = finalH;
+                    const ctx = canvas.getContext('2d');
+                    
+                    // Crop from original image
+                    ctx.drawImage(img, 
+                        activeX + c * cellW, activeY + r * cellH, // source x, y
+                        cellW, finalH,                            // source w, h
+                        0, 0, cellW, finalH                       // dest x, y, w, h
+                    );
+
+                    const iconImg = document.createElement('img');
+                    iconImg.src = canvas.toDataURL('image/png');
+                    iconImg.onclick = () => {
+                        const link = document.createElement('a');
+                        link.download = `zodiac_${r * cols + c + 1}.png`;
+                        link.href = iconImg.src;
+                        link.click();
+                    };
+                    
+                    const div = document.createElement('div');
+                    div.className = 'icon-box';
+                    div.appendChild(iconImg);
+                    resultGrid.appendChild(div);
+                }
+            }
+            // Scroll to result
+            resultGrid.scrollIntoView({behavior: 'smooth'});
+        }
+    </script>
+</body>
+</html>
