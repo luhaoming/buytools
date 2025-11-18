@@ -1,39 +1,84 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-TW">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width">
-  <title>URLOPENER</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>URL Opener ver=2025-11-18.003</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Arial,sans-serif;background:#2c5282;color:#fff;padding:20px}
+.container{max-width:1200px;margin:0 auto}
+h1{text-align:center;margin-bottom:10px}
+.desc{text-align:center;font-size:14px;margin-bottom:20px;opacity:.9}
+textarea{width:100%;min-height:200px;padding:15px;border:2px solid #4a90e2;border-radius:8px;font-size:14px;resize:vertical}
+.btn-group{display:flex;gap:10px;margin:15px 0}
+button{flex:1;padding:15px;border:none;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer;transition:.3s}
+.btn-submit{background:#38b2ac;color:#fff}
+.btn-submit:hover{background:#319795}
+.btn-openall{background:#f6e05e;color:#2d3748}
+.btn-openall:hover{background:#ecc94b}
+.btn-openall:disabled{opacity:.5;cursor:not-allowed}
+.url-list{background:#fff;border-radius:8px;padding:20px;margin-top:20px;color:#2d3748}
+.url-item{display:flex;align-items:center;padding:10px;border-bottom:1px solid #e2e8f0;gap:10px;transition:.3s}
+.url-item:last-child{border-bottom:none}
+.url-item.active{background:#fef3c7}
+.url-link{flex:1;color:#2c5282;text-decoration:none;word-break:break-all}
+.url-link:hover{text-decoration:underline}
+.output{background:#2d3748;border-radius:8px;padding:20px;margin-top:20px;position:relative}
+.output textarea{background:#1a202c;color:#fff;border-color:#4a5568;font-family:monospace}
+.copy-btn{position:absolute;top:28px;right:30px;background:#4a5568;border:none;color:#fff;padding:8px 12px;border-radius:6px;cursor:pointer;font-size:12px;transition:.3s}
+.copy-btn:hover{background:#2d3748}
+.copy-btn:active{background:#1a202c}
+.empty{text-align:center;opacity:.6;padding:20px}
+</style>
 </head>
 <body>
-<p>URLS:</p>
-<textarea name="inp" id="inp" cols="30" rows="10"></textarea>
-  
-<button onclick="myStart()">Click!</button>
-<p>OUTPUT</p>  
-<div id="out"></div>
-</body>
+<div class="container">
+<h1>URL Opener</h1>
+<p class="desc">貼上文字後按 Submit,自動提取網址並列表</p>
+<textarea id="input" placeholder="在此貼上任何包含網址的文字..."></textarea>
+<div class="btn-group">
+<button class="btn-submit" onclick="parse()">Submit</button>
+<button class="btn-openall" id="openAllBtn" onclick="openAll()" disabled>Open All</button>
+</div>
+<div id="urlList" class="url-list" style="display:none"></div>
+<div class="output">
+<h3 style="margin-bottom:10px">清理後的 URL 列表</h3>
+<button class="copy-btn" onclick="copyAll()">複製</button>
+<textarea id="output" readonly placeholder="提取的網址會顯示在這裡..."></textarea>
+</div>
+</div>
 <script>
-function dd(txt) {
-  document.querySelector('div#out').innerText = document.querySelector('div#out').innerText + txt;
+let urls=[];
+function parse(){
+const text=document.getElementById('input').value;
+const regex=/https?:\/\/[^\s"'<>]+/gi;
+urls=[...new Set(text.match(regex)||[])];
+document.getElementById('openAllBtn').disabled=!urls.length;
+const list=document.getElementById('urlList');
+if(!urls.length){
+list.innerHTML='<p class="empty">未找到有效網址</p>';
+list.style.display='block';
+document.getElementById('output').value='';
+return;
 }
-
-function myStart() {
-  intxt = document.querySelector('#inp').value;
-  urls = intxt.split("\n");
-  if (urls.length > 0) {
-    urls.forEach(function(itm) {
-      if (/^(http|line)/.test(itm) ) {
-        var ifrm = document.createElement("iframe");
-        ifrm.setAttribute("src", itm);
-        ifrm.style.width = "0";
-        ifrm.style.height = "0";
-        document.body.appendChild(ifrm);
-        dd(itm + "<BR>");
-      }
-    })
-  }
-
+list.innerHTML=urls.map((url,i)=>`<div class="url-item" id="item${i}"><a class="url-link" href="${url}" target="_blank" onclick="highlight(${i})">${url.length>50?url.substring(0,50)+'...':url}</a></div>`).join('');
+list.style.display='block';
+document.getElementById('output').value=urls.join('\n');
+}
+function highlight(i){
+document.querySelectorAll('.url-item').forEach(el=>el.classList.remove('active'));
+document.getElementById(`item${i}`).classList.add('active');
+}
+function openAll(){
+if(!urls.length)return;
+urls.forEach(url=>window.open(url,'_blank'));
+}
+function copyAll(){
+const output=document.getElementById('output');
+output.select();
+document.execCommand('copy');
 }
 </script>
+</body>
 </html>
