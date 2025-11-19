@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time Tool</title>
+    <style>
+        :root {
+            --font-stack: 'Consolas', 'Menlo', 'Monaco', 'Lucida Console', monospace;
+        }
+
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            font-family: var(--font-stack);
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        /* === 容器排版 === */
+        #clock-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            width: 100%;
+        }
+
+        /* 模式 1: Fit (放大版) */
+        .mode-fit #clock-container { flex-direction: column; }
+        .mode-fit .time-main { font-size: 18vw; line-height: 1; }
+        .mode-fit .time-ms { display: none; }
+        .mode-fit .date-part { font-size: 4vw; margin-top: 2vh; opacity: 0.8; }
+
+        /* 模式 2: Fixed (16pt 截圖版) */
+        .mode-fixed #clock-container { flex-direction: row; gap: 1ch; }
+        .mode-fixed .date-part { order: 1; margin: 0; }
+        .mode-fixed .time-part { order: 2; margin: 0; }
+        .mode-fixed .time-part, .mode-fixed .date-part { font-size: 16pt; white-space: nowrap; }
+        .mode-fixed .time-ms { display: inline; }
+
+        /* === 配色方案 (4種) === */
+        /* 1. 經典藍黃 */
+        body.theme-blue { background-color: #000080; color: #FFFF00; }
+        /* 2. 文書白底 */
+        body.theme-white { background-color: #FFFFFF; color: #333333; }
+        /* 3. 終端機綠 (Matrix) */
+        body.theme-matrix { background-color: #000000; color: #00FF00; }
+        /* 4. 標準暗黑 */
+        body.theme-dark { background-color: #000000; color: #FFFFFF; }
+
+        /* 左下角控制面板 */
+        #controls {
+            position: fixed; bottom: 10px; left: 10px;
+            background: rgba(255, 255, 255, 0.2); /* 改半透明適應深色背景 */
+            padding: 4px; border-radius: 4px;
+            z-index: 999; display: flex; gap: 5px;
+            backdrop-filter: blur(2px); /* 毛玻璃效果 */
+        }
+        
+        #controls button {
+            border: 1px solid #888; background: #f0f0f0; color: #000;
+            cursor: pointer; padding: 2px 6px; font-family: sans-serif; font-size: 12px;
+        }
+        #controls button:active { background: #ccc; }
+    </style>
+</head>
+<body class="theme-blue mode-fit">
+
+    <div id="clock-container">
+        <div class="time-part">
+            <span id="t-main" class="time-main"></span><span id="t-ms" class="time-ms"></span>
+        </div>
+        <div id="date" class="date-part"></div>
+    </div>
+
+    <div id="controls">
+        <button onclick="cycleTheme(event)">換色</button>
+        <button onclick="toggleSize(event)">大小</button>
+    </div>
+
+    <script>
+        const displayTimeMain = document.getElementById('t-main');
+        const displayTimeMs = document.getElementById('t-ms');
+        const displayDate = document.getElementById('date');
+        const body = document.body;
+        const pad = (n, s = 2) => n.toString().padStart(s, '0');
+
+        // 配色清單
+        const themes = ['theme-blue', 'theme-white', 'theme-matrix', 'theme-dark'];
+        let currentThemeIndex = 0;
+
+        const updateTime = () => {
+            const now = new Date();
+            displayDate.textContent = `${now.getFullYear()}/${pad(now.getMonth() + 1)}/${pad(now.getDate())}`;
+            displayTimeMain.textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+            displayTimeMs.textContent = ` ${pad(now.getMilliseconds(), 3)}`;
+            requestAnimationFrame(updateTime);
+        };
+        requestAnimationFrame(updateTime);
+
+        // 循環切換顏色
+        function cycleTheme(e) {
+            if(e) e.stopPropagation();
+            // 移除當前 class
+            body.classList.remove(themes[currentThemeIndex]);
+            // 索引 +1，超過長度歸零
+            currentThemeIndex = (currentThemeIndex + 1) % themes.length;
+            // 加入新 class
+            body.classList.add(themes[currentThemeIndex]);
+        }
+
+        function toggleSize(e) {
+            if(e) e.stopPropagation();
+            const isFit = body.classList.contains('mode-fit');
+            body.classList.toggle('mode-fit', !isFit);
+            body.classList.toggle('mode-fixed', isFit);
+        }
+
+        body.addEventListener('click', (e) => {
+            if (!e.target.closest('#controls')) cycleTheme();
+        });
+        body.addEventListener('dblclick', (e) => {
+            if (!e.target.closest('#controls')) toggleSize();
+        });
+    </script>
+</body>
+</html>
