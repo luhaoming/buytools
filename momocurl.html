@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Momo Config Generator - ver=2025-11-19.006</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.global.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { padding: 8px; }
+        .output {
+            white-space: pre-wrap;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        textarea { font-size: 12px; }
+        .card { margin-bottom: 8px; }
+        .card-header { padding: 8px; }
+        .card-body { padding: 8px; }
+        h5 { font-size: 14px; margin: 0; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <h4 class="mb-2">Momo Config Generator</h4>
+        
+        <textarea class="form-control mb-2" rows="4" v-model="curlInput" placeholder='貼上 curl'></textarea>
+        <button class="btn btn-primary btn-sm w-100 mb-2" @click="parseCurl" :disabled="!curlInput">Generate</button>
+        
+        <div v-if="configOutput">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5>Config</h5>
+                    <button class="btn btn-sm btn-outline-secondary" @click="copyToClipboard(configOutput)">Copy</button>
+                </div>
+                <div class="card-body">
+                    <div class="output bg-light p-2 border rounded">{{ configOutput }}</div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5>JSON</h5>
+                    <button class="btn btn-sm btn-outline-secondary" @click="copyToClipboard(rawJson)">Copy</button>
+                </div>
+                <div class="card-body">
+                    <div class="output bg-light p-2 border rounded">{{ rawJson }}</div>
+                </div>
+            </div>
+            
+            <div class="text-success small">{{ clipboardMessage }}</div>
+        </div>
+    </div>
+    <script>
+        const { createApp, ref } = Vue;
+        
+        createApp({
+            setup() {
+                const curlInput = ref('');
+                const configOutput = ref('');
+                const rawJson = ref('');
+                const clipboardMessage = ref('');
+                
+                const parseCurl = () => {
+                    try {
+                        const input = curlInput.value.trim();
+                        
+                        const urlMatch = input.match(/curl\s+['"]?([^\s'"]+)/);
+                        if (!urlMatch) throw new Error('無法提取 URL');
+                        const apiUrl = urlMatch[1];
+                        
+                        const dataMatch = input.match(/(?:--data(?:-raw)?|-d)\s+['"](.+?)['"](?:\s|$)/s);
+                        if (!dataMatch) throw new Error('無法提取 POST payload');
+                        
+                        let postData = dataMatch[1].replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+                        const jsonData = JSON.parse(postData);
+                        
+                        configOutput.value = `api='${apiUrl}'\nisenon=1\nisjson=1\nisapp=1\nisnow=1\npsample='${JSON.stringify(jsonData)}'`;
+                        rawJson.value = JSON.stringify(jsonData);
+                    } catch (error) {
+                        configOutput.value = `Error: ${error.message}`;
+                        rawJson.value = '';
+                    }
+                };
+                
+                const copyToClipboard = async (text) => {
+                    try {
+                        await navigator.clipboard.writeText(text);
+                        clipboardMessage.value = 'Copied!';
+                        setTimeout(() => clipboardMessage.value = '', 2000);
+                    } catch (err) {
+                        clipboardMessage.value = 'Copy failed';
+                    }
+                };
+                
+                return {
+                    curlInput,
+                    configOutput,
+                    rawJson,
+                    clipboardMessage,
+                    parseCurl,
+                    copyToClipboard
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
