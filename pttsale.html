@@ -3,25 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>貼文產生器 ver=2025-11-25.002</title>
+    <title>貼文產生器 ver=2025-11-25.003</title>
     <style>
         body { font-family: 'Microsoft JhengHei', sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; }
         textarea { width: 100%; min-height: 200px; margin: 10px 0; padding: 10px; font-size: 14px; }
-        button { padding: 10px 20px; font-size: 16px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 4px; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 4px; margin-right: 10px; }
         button:hover { background: #45a049; }
+        .btn-copy { background: #2196F3; }
+        .btn-copy:hover { background: #0b7dda; }
         .output { background: #f5f5f5; padding: 15px; border-radius: 4px; white-space: pre-wrap; font-family: monospace; }
         label { font-weight: bold; display: block; margin-top: 10px; }
+        .btns { margin: 10px 0; }
     </style>
 </head>
 <body>
-    <h2>貼文產生器 ver=2025-11-25.002</h2>
+    <h2>貼文產生器 ver=2025-11-25.003</h2>
     
     <label>輸入：</label>
     <textarea id="input" placeholder="範例：
 20 12/09_跨－原萃５８０ｍｌ系列
 16 12/09_跨－光泉濃豆漿系列"></textarea>
     
-    <button onclick="generate()">產生貼文</button>
+    <div class="btns">
+        <button onclick="generate()">產生貼文</button>
+        <button class="btn-copy" onclick="copy()">拷貝</button>
+    </div>
     
     <label>輸出：</label>
     <div class="output" id="output"></div>
@@ -61,6 +67,12 @@
             ].join('\n');
 
             document.getElementById('output').textContent = output;
+        };
+
+        const copy = () => {
+            const text = document.getElementById('output').textContent;
+            if (!text) return alert('請先產生貼文');
+            navigator.clipboard.writeText(text).then(() => alert('已拷貝'));
         };
     </script>
 </body>
