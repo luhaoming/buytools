@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>MD to HTML</title>
+
+  <!-- marked.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <div id="content">讀取中...</div>
+
+  <script>
+    fetch('1.md')
+      .then(r => r.text())
+      .then(md => {
+        var html = marked.parse(md);
+        document.getElementById('content').innerHTML = html;
+      })
+      .catch(() => {
+        document.getElementById('content').textContent = '讀取 1.md 失敗';
+      });
+  </script>
+</body>
+</html>
