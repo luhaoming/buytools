@@ -1,47 +1,187 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cookie Extractor from cURL</title>
+    <title>cURL Cookie Extractor</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
+        * { box-sizing: border-box; }
+        body { font-family: system-ui, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { margin: 0 0 20px; font-size: 1.5em; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #333; }
+        label small { font-weight: normal; color: #666; }
         textarea {
-            width: 100%;
-            height: 150px;
-            margin-bottom: 10px;
+            width: 100%; height: 100px; padding: 12px; border: 2px solid #ddd;
+            border-radius: 8px; font-family: monospace; font-size: 13px; resize: vertical;
+            transition: border-color .2s;
         }
+        textarea:focus { outline: none; border-color: #4a90d9; }
+        .btn-row { display: flex; gap: 10px; margin: 10px 0; flex-wrap: wrap; }
         button {
-            padding: 10px 15px;
-            font-size: 16px;
+            padding: 8px 16px; font-size: 13px; border: none; border-radius: 6px;
+            cursor: pointer; transition: all .2s;
         }
+        .btn-primary { background: #4a90d9; color: #fff; }
+        .btn-primary:hover { background: #357abd; }
+        .btn-secondary { background: #6c757d; color: #fff; }
+        .btn-secondary:hover { background: #545b62; }
+        .btn-success { background: #28a745; color: #fff; }
+        .btn-success:hover { background: #1e7e34; }
+        .btn-info { background: #17a2b8; color: #fff; }
+        .btn-info:hover { background: #138496; }
+        .output-wrap { position: relative; margin-top: 15px; }
+        .output-box { background: #fff; }
+        .output-box.success { border-color: #28a745; background: #f0fff4; }
+        .output-box.error { border-color: #dc3545; background: #fff5f5; }
+        .output-box.clean { border-color: #17a2b8; background: #f0fafc; }
+        .toast {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: #333; color: #fff; padding: 12px 24px; border-radius: 8px;
+            opacity: 0; transition: opacity .3s; pointer-events: none;
+        }
+        .toast.show { opacity: 1; }
+        .hint { font-size: 12px; color: #666; margin-top: 5px; }
+        .ver { text-align: right; font-size: 11px; color: #999; margin-top: 20px; }
+        .stats { font-size: 12px; color: #666; margin: 5px 0; }
     </style>
 </head>
 <body>
-    <h1>cURL Cookie Extractor</h1>
-    <h2>Input cURL Statement</h2>
-    <textarea id="inputTXT" placeholder="Paste your cURL statement here..."></textarea>
-    <button onclick="extractCookie()">Extract Cookie</button>
-    <h2>Extracted Cookie</h2>
-    <textarea id="outputTXT" readonly placeholder="Extracted cookie will appear here..."></textarea>
+    <div class="container">
+        <h1>🍪 cURL Cookie Extractor</h1>
+        
+        <label for="inputTXT">貼上 cURL 指令</label>
+        <textarea id="inputTXT" placeholder="支援 Chrome (-H 'cookie:') 及 Brave (-b) 格式..."></textarea>
+        <div class="btn-row">
+            <button class="btn-primary" onclick="extractCookie()">擷取 Cookie</button>
+            <button class="btn-secondary" onclick="pasteFromClipboard()">📋 貼上</button>
+            <button class="btn-secondary" onclick="clearAll()">🗑️ 清除</button>
+        </div>
+        
+        <div class="output-wrap">
+            <label for="outputTXT">完整 Cookie</label>
+            <textarea id="outputTXT" class="output-box" readonly placeholder="結果將顯示於此..."></textarea>
+            <div class="btn-row">
+                <button class="btn-success" onclick="copyResult('outputTXT')">📋 複製</button>
+            </div>
+        </div>
+
+        <div class="output-wrap">
+            <label for="cleanTXT">排除追蹤器 <small>(移除 GA、Incapsula、91APP 等)</small></label>
+            <textarea id="cleanTXT" class="output-box" readonly placeholder="乾淨的 cookie 將顯示於此..."></textarea>
+            <div class="stats" id="stats"></div>
+            <div class="btn-row">
+                <button class="btn-info" onclick="copyResult('cleanTXT')">📋 複製乾淨版</button>
+            </div>
+        </div>
+        
+        <p class="hint">💡 提示：貼上後自動擷取，點擊輸出框也會自動複製</p>
+        <p class="ver">ver=2025-05-28.002</p>
+    </div>
+    
+    <div class="toast" id="toast"></div>
 
     <script>
-        function extractCookie() {
-            const inputText = document.getElementById("inputTXT").value;
-            // Regular expression to capture the cookie part, case insensitive
-            const cookieRegex = /-H\s+'(?:cookie|Cookie):\s*([^']+)'/i; 
-            const match = inputText.match(cookieRegex);
-            const outputTextArea = document.getElementById("outputTXT");
+        const $input = document.getElementById('inputTXT');
+        const $output = document.getElementById('outputTXT');
+        const $clean = document.getElementById('cleanTXT');
+        const $stats = document.getElementById('stats');
+        
+        // 追蹤器 cookie 模式
+        const TRACKERS = [
+            /^_ga/, /^_gid/, /^_gat/, /^_gcl/, /^_gac_/,  // Google Analytics
+            /^__utm/, /^__gads/, /^__gpi/,                 // Google Ads/UTM
+            /^visid_incap/, /^incap_ses/, /^nlbi_/,        // Incapsula/Imperva
+            /^_fbp$/, /^_fbc$/, /^fr$/,                    // Facebook
+            /^_tt_/, /^_ttp/,                              // TikTok
+            /^_pin_/,                                       // Pinterest
+            /^_li_/, /^li_/,                               // LinkedIn
+            /^91_/, /^91app/i,                             // 91APP
+            /^_clck/, /^_clsk/,                            // Microsoft Clarity
+            /^mp_/, /^mixpanel/,                           // Mixpanel
+            /^amplitude/i,                                 // Amplitude
+            /^ajs_/,                                       // Segment
+            /^hubspot/i, /^__hs/, /^__hstc/, /^__hssc/,    // HubSpot
+            /^intercom/i,                                  // Intercom
+            /^gaClientId$/                                 // GA 自訂
+        ];
 
-            if (match && match[1]) {
-                // Include the 'cookie:' prefix in the output
-                outputTextArea.value = `cookie: ${match[1]}`; // Set the extracted cookie with prefix to output
-            } else {
-                outputTextArea.value = "No cookie found in the provided cURL statement.";
+        function isTracker(name) {
+            return TRACKERS.some(p => p.test(name));
+        }
+
+        $input.addEventListener('paste', () => setTimeout(extractCookie, 50));
+        $output.addEventListener('click', () => { if ($output.value && !$output.classList.contains('error')) copyResult('outputTXT'); });
+        $clean.addEventListener('click', () => { if ($clean.value) copyResult('cleanTXT'); });
+
+        function extractCookie() {
+            const text = $input.value;
+            const regex = /-H\s+['"](?:cookie|Cookie):\s*([^'"]+)['"]|-b\s+['"]([^'"]+)['"]/i;
+            const match = text.match(regex);
+            
+            $output.classList.remove('success', 'error');
+            $clean.classList.remove('clean');
+            $stats.textContent = '';
+            
+            if (!match || (!match[1] && !match[2])) {
+                $output.value = '找不到 cookie 參數';
+                $clean.value = '';
+                $output.classList.add('error');
+                return;
             }
+
+            const raw = match[1] || match[2];
+            $output.value = `cookie: ${raw}`;
+            $output.classList.add('success');
+
+            // 解析並過濾
+            const cookies = raw.split(/;\s*/).filter(c => c.includes('='));
+            const clean = [];
+            const removed = [];
+
+            cookies.forEach(c => {
+                const name = c.split('=')[0].trim();
+                if (isTracker(name)) { removed.push(name); return; }
+                clean.push(c);
+            });
+
+            $clean.value = clean.length ? `cookie: ${clean.join('; ')}` : '(全部都是追蹤器)';
+            $clean.classList.add('clean');
+            $stats.textContent = `原始 ${cookies.length} 個 → 保留 ${clean.length} 個，移除 ${removed.length} 個追蹤器`;
+        }
+
+        async function pasteFromClipboard() {
+            try {
+                $input.value = await navigator.clipboard.readText();
+                extractCookie();
+                toast('已貼上');
+            } catch { toast('無法存取剪貼簿', true); }
+        }
+
+        function copyResult(id) {
+            const el = document.getElementById(id);
+            if (!el.value || el.classList.contains('error')) return;
+            navigator.clipboard.writeText(el.value);
+            el.select();
+            toast('已複製！');
+        }
+
+        function clearAll() {
+            $input.value = '';
+            $output.value = '';
+            $clean.value = '';
+            $stats.textContent = '';
+            $output.classList.remove('success', 'error');
+            $clean.classList.remove('clean');
+            $input.focus();
+        }
+
+        function toast(msg, isError) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.style.background = isError ? '#dc3545' : '#333';
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 1500);
         }
     </script>
 </body>

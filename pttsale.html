@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>貼文產生器 ver=2025-11-25.003</title>
+    <title>貼文產生器 ver=2025-11-25.004</title>
     <style>
         body { font-family: 'Microsoft JhengHei', sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; }
         textarea { width: 100%; min-height: 200px; margin: 10px 0; padding: 10px; font-size: 14px; }
@@ -17,7 +17,7 @@
     </style>
 </head>
 <body>
-    <h2>貼文產生器 ver=2025-11-25.003</h2>
+    <h2>貼文產生器 ver=2025-11-25.004</h2>
     
     <label>輸入：</label>
     <textarea id="input" placeholder="範例：
@@ -53,6 +53,7 @@
             
             const output = [
                 '商品名稱：',
+                '#. 兌換期限_商品名稱/售價/數量 [剩餘數量]',
                 ...items.map(i => `${i.letter}. ${i.name.padEnd(maxLen - i.letter.length - 2)} $14 ${i.qty.padStart(2)}`),
                 '',
                 '交易地區：線上',
