@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL 參數解析工具 | URL Parameter Decoder</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&family=Roboto+Mono:wght@400&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans TC', 'Roboto', sans-serif; background-color: #f8f8f8; color: #333; line-height: 1.6; margin: 0; padding: 40px 20px; display: flex; justify-content: center; min-height: 100vh; }
+        .container { width: 100%; max-width: 720px; background-color: #fff; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); padding: 30px; box-sizing: border-box; }
+        h2 { font-weight: 700; color: #2c3e50; text-align: center; margin-bottom: 25px; padding-bottom: 10px; border-bottom: 2px solid #a8d9ff; position: relative; }
+        h2::after { content: "URL Parameter Decoder"; font-size: 0.6em; color: #888; position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); white-space: nowrap; }
+        .input-group { display: flex; align-items: center; margin-bottom: 15px; }
+        .input-group label { flex-shrink: 0; width: 90px; font-weight: 700; color: #555; text-align: right; padding-right: 15px; }
+        input[type="text"], textarea { flex-grow: 1; padding: 10px 12px; border: 1px solid #dcdcdc; border-radius: 5px; font-size: 1rem; font-family: 'Roboto Mono', monospace; color: #444; background-color: #fcfcfc; box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.04); transition: border-color 0.2s ease, box-shadow 0.2s ease; resize: vertical; min-height: 40px; line-height: 1.5; }
+        input[type="text"]:focus, textarea:focus { border-color: #7abaff; box-shadow: 0 0 0 3px rgba(122, 186, 255, 0.2); outline: none; }
+        input[readonly], textarea[readonly] { background-color: #f0f4f7; cursor: pointer; }
+        input[readonly]:hover, textarea[readonly]:hover { border-color: #b0d4ff; }
+        .long-key-container { padding: 15px; margin-bottom: 15px; border: 1px dashed #f0ad4e; border-radius: 4px; background-color: #fff8e1; }
+        .long-key-label { font-weight: 700; color: #ac6318; margin: 0 0 5px 0; padding-bottom: 5px; border-bottom: 1px dotted #f0ad4e; word-break: break-all; }
+        hr { border: none; border-top: 1px dashed #ccc; margin: 30px 0; }
+        #result-area { min-height: 100px; }
+        #initial-message { text-align: center; color: #777; font-style: italic; padding: 20px 0; }
+        h3 { font-weight: 700; color: #4a698a; margin-top: 30px; margin-bottom: 15px; border-left: 4px solid #7abaff; padding-left: 10px; }
+        .info-msg { text-align: center; color: #007bff; font-size: 0.9em; margin-top: 25px; padding: 10px; background-color: #eaf6ff; border-left: 5px solid #007bff; border-radius: 4px; }
+        .info-msg strong { color: #0056b3; }
+        .error-msg { color: #d9534f !important; background-color: #fef1f1; border-left-color: #d9534f; padding: 10px; border-radius: 4px; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>URL 參數解析工具</h2>
+    
+    <div class="input-group">
+        <label for="uI">URL</label>
+        <input type="text" id="uI" 
+               placeholder="請在此輸入 URL (e.g., https://a.b.c.d/a.php?a=1&b=2&c=3)"
+               oninput="d()">
+    </div>
+
+    <hr>
+    
+    <div id="rA">
+        <p id="initial-message">請輸入 URL，結果將會自動解析顯示。</p>
+    </div>
+
+    <p class="info-msg">
+        💡 **提示 (Hint):**<br>
+        **雙擊 (Double-Click)** 任何參數值輸入框即可複製到剪貼簿。
+    </p>
+
+</div>
+
+<script>
+const L = 50; // 長度閾值 (Length Threshold)
+
+function iL(t) { return t.length > L; } // isTooLongForInput
+
+function cC(e) { // copyToClipboard
+    if (!e.value) { alert('此輸入欄位沒有值。'); return; }
+    e.select();
+    e.setSelectionRange(0, 99999); 
+    try {
+        document.execCommand('copy');
+        const v = e.value;
+        const b = e.style.backgroundColor;
+        e.value = '已複製! 🎉 (Copied!)';
+        e.style.backgroundColor = '#d4edda'; 
+        setTimeout(() => { e.value = v; e.style.backgroundColor = '#f0f4f7'; }, 800);
+    } catch (err) {
+        console.error('複製失敗:', err);
+        alert('抱歉，複製失敗，瀏覽器可能不支援。');
+    }
+}
+
+function gH(k, v) { // generateParamHtml
+    const iKL = iL(k); // is Key Long
+    const iVL = iL(v); // is Value Long
+    const t = iVL ? 'textarea' : 'input'; // tag
+    const ty = iVL ? '' : 'type="text"'; // type
+
+    if (iKL) {
+        // Key 太長：兩行模式
+        const vE = t === 'textarea' 
+            ? `<textarea readonly ondblclick="cC(this)">${v}</textarea>`
+            : `<input ${ty} value="${v}" readonly ondblclick="cC(this)">`;
+        
+        return `
+            <div class="long-key-container">
+                <p class="long-key-label">⚠️ **Key 太長警告！** Key: ${k}</p>
+                <div class="input-group" style="align-items: flex-start; margin-bottom: 0;">
+                    <label style="text-align: left; width: 90px; color: #ac6318;">Value</label>
+                    ${vE}
+                </div>
+            </div>
+        `;
+    }
+    
+    // Key 正常：單行模式
+    if (t === 'textarea') {
+        return `<div class="input-group">
+            <label>${k}</label>
+            <textarea readonly ondblclick="cC(this)">${v}</textarea>
+        </div>`;
+    }
+    
+    return `<div class="input-group">
+        <label>${k}</label>
+        <input ${ty} value="${v}" readonly 
+               ondblclick="cC(this)">
+    </div>`;
+}
+
+function d() { // decodeUrl
+    const uI = document.getElementById('uI'); // URL Input
+    const rA = document.getElementById('rA'); // Result Area
+    const uS = uI.value.trim(); // URL String
+    
+    rA.innerHTML = ''; 
+
+    if (!uS) {
+        rA.innerHTML = '<p id="initial-message">請輸入 URL，結果將會自動解析顯示。</p>';
+        return;
+    }
+
+    try {
+        const u = new URL(uS); // URL Object
+        const p = u.pathname; // Pathname
+        
+        // 1. 顯示 path
+        const pE = iL(p) ? 'textarea' : 'input'; // Path Element Tag
+        const pVA = pE === 'input' ? `value="${p}"` : ''; // Path Value Attribute
+        const pC = pE === 'textarea' ? p : ''; // Path Content
+        
+        rA.innerHTML += `<div class="input-group">
+            <label>路徑 (Path)</label>
+            <${pE} ${pVA} readonly 
+                   ondblclick="cC(this)">${pC}</${pE}>
+        </div>`;
+        
+        // 2. 顯示參數 (GET)
+        const params = u.searchParams;
+        if (params.size > 0) {
+            rA.innerHTML += '<h3>=== 參數列表 (Parameters List) ===</h3>';
+            params.forEach((v, k) => { rA.innerHTML += gH(k, v); }); // 遍歷並產生 HTML
+        } else if (u.search) {
+             rA.innerHTML += `<p>URL 包含查詢字串，但無法解析為標準 key=value 格式的參數。</p>`;
+        } else {
+             rA.innerHTML += `<p>此 URL 沒有 GET 參數。</p>`;
+        }
+        
+    } catch (error) {
+        rA.innerHTML = `<p class="error-msg">❌ 無效的 URL 格式 (Invalid URL Format)，請檢查。</p>`;
+        console.error('URL 解析錯誤:', error);
+    }
+}
+</script>
+
+</body>
+</html>
