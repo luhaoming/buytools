@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Text Diff Tool</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Hiragino Kaku Gothic ProN","Meiryo",system-ui,sans-serif;background:#fafafa;color:#333;min-height:100vh;padding:0}
+.header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);padding:20px;text-align:center;box-shadow:0 2px 10px rgba(102,126,234,0.3)}
+.header h1{color:#fff;font-size:1.4em;font-weight:500;letter-spacing:2px}
+.header p{color:rgba(255,255,255,0.8);font-size:12px;margin-top:5px}
+.main{max-width:1200px;margin:0 auto;padding:20px}
+.card{background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.08);margin-bottom:15px;overflow:hidden}
+.card-header{background:#f8f9fa;padding:10px 15px;border-bottom:1px solid #eee;font-size:13px;font-weight:600;color:#555;display:flex;align-items:center;gap:8px}
+.card-header::before{content:"";display:inline-block;width:4px;height:14px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:2px}
+.card-body{padding:15px}
+.input-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+.input-group label{display:block;font-size:12px;color:#666;margin-bottom:6px;font-weight:500}
+textarea{width:100%;height:180px;padding:12px;border:1px solid #e0e0e0;border-radius:6px;font-family:"SF Mono","Monaco","Inconsolata",monospace;font-size:12px;line-height:1.5;resize:vertical;transition:border-color .2s,box-shadow .2s}
+textarea:focus{outline:none;border-color:#667eea;box-shadow:0 0 0 3px rgba(102,126,234,0.1)}
+textarea::placeholder{color:#bbb}
+.btn-group{display:flex;justify-content:center;gap:10px;padding:15px}
+.btn{padding:10px 28px;border:none;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;box-shadow:0 2px 8px rgba(102,126,234,0.3)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(102,126,234,0.4)}
+.btn-secondary{background:#fff;color:#666;border:1px solid #ddd}
+.btn-secondary:hover{background:#f5f5f5;border-color:#ccc}
+.stats{text-align:center;padding:12px;background:#f8f9fa;border-radius:6px;margin-bottom:15px}
+.stats-item{display:inline-block;margin:0 15px;font-size:13px}
+.stats-num{font-weight:700;margin-right:4px}
+.stats-num.add{color:#22863a}
+.stats-num.del{color:#cb2431}
+.stats-num.chg{color:#b08800}
+.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+.result-box{background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.08);overflow:hidden}
+.result-header{background:#f8f9fa;padding:10px 15px;border-bottom:1px solid #eee;font-size:12px;font-weight:600;color:#555}
+.result-content{font-family:"SF Mono","Monaco","Inconsolata",monospace;font-size:12px;max-height:350px;overflow:auto}
+.line{display:flex;min-height:22px;border-bottom:1px solid #f0f0f0}
+.line:last-child{border-bottom:none}
+.line-num{min-width:50px;padding:3px 10px 3px 8px;background:#fafafa;color:#aaa;text-align:right;border-right:1px solid #eee;user-select:none;font-size:11px}
+.line-text{flex:1;padding:3px 10px;white-space:pre-wrap;word-break:break-all}
+.added{background:#e6ffec}
+.added .line-num{background:#dcffe4;color:#22863a}
+.removed{background:#ffeef0}
+.removed .line-num{background:#ffdce0;color:#cb2431}
+.changed{background:#fff5b1}
+.changed .line-num{background:#fff0a0;color:#b08800}
+.mark{font-weight:700;margin-right:6px}
+.added .mark{color:#22863a}
+.removed .mark{color:#cb2431}
+.changed .mark{color:#b08800}
+.hl{background:#ffdb99;border-radius:2px;padding:0 2px}
+.footer{text-align:center;padding:20px;color:#aaa;font-size:11px}
+.footer a{color:#667eea;text-decoration:none}
+.badge{display:inline-block;background:#667eea;color:#fff;font-size:10px;padding:2px 6px;border-radius:10px;margin-left:8px}
+</style>
+</head>
+<body>
+<div class="header">
+<h1>📝 Text Diff Tool</h1>
+<p>Pure Frontend Text Compare — No Server Required</p>
+</div>
+<div class="main">
+<div class="card">
+<div class="card-header">Input<span class="badge">DIFF</span></div>
+<div class="card-body">
+<div class="input-grid">
+<div class="input-group">
+<label>Original Text</label>
+<textarea id="t1" placeholder="Paste original text here..."></textarea>
+</div>
+<div class="input-group">
+<label>Modified Text</label>
+<textarea id="t2" placeholder="Paste modified text here..."></textarea>
+</div>
+</div>
+</div>
+<div class="btn-group">
+<button class="btn btn-primary" onclick="compare()">▶ Compare</button>
+<button class="btn btn-secondary" onclick="swap()">⇄ Switch</button>
+<button class="btn btn-secondary" onclick="clearAll()">✕ Clear</button>
+</div>
+</div>
+<div class="stats" id="stats"></div>
+<div class="result-grid">
+<div class="result-box">
+<div class="result-header">◀ Original</div>
+<div class="result-content" id="r1"></div>
+</div>
+<div class="result-box">
+<div class="result-header">▶ Modified</div>
+<div class="result-content" id="r2"></div>
+</div>
+</div>
+</div>
+<div class="footer">ver=2025-06-03.003 | Pure JavaScript Implementation</div>
+<script>
+function compare(){
+  const a=document.getElementById('t1').value.split('\n');
+  const b=document.getElementById('t2').value.split('\n');
+  const d=diffLines(a,b);
+  let h1='',h2='',add=0,del=0,chg=0;
+  d.forEach(op=>{
+    if(op.type==='equal'){
+      h1+=L(op.ln1,op.text,'','');
+      h2+=L(op.ln2,op.text,'','');
+    }else if(op.type==='delete'){
+      h1+=L(op.ln1,op.text,'removed','-');del++;
+    }else if(op.type==='insert'){
+      h2+=L(op.ln2,op.text,'added','+');add++;
+    }else if(op.type==='replace'){
+      const hl=hlDiff(op.text1,op.text2);
+      h1+=L(op.ln1,hl[0],'changed','~',1);
+      h2+=L(op.ln2,hl[1],'changed','~',1);chg++;
+    }
+  });
+  document.getElementById('r1').innerHTML=h1||E();
+  document.getElementById('r2').innerHTML=h2||E();
+  document.getElementById('stats').innerHTML=`<span class="stats-item"><span class="stats-num add">${add}</span>Added</span><span class="stats-item"><span class="stats-num del">${del}</span>Deleted</span><span class="stats-item"><span class="stats-num chg">${chg}</span>Changed</span>`;
+}
+function L(n,t,c,m,h){return `<div class="line ${c}"><div class="line-num">${m?`<span class="mark">${m}</span>`:''}${n}</div><div class="line-text">${h?t:esc(t)}</div></div>`}
+function E(){return '<div class="line"><div class="line-text" style="color:#aaa">(empty)</div></div>'}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function hlDiff(a,b){
+  const d=dC(a,b);let ha='',hb='';
+  d.forEach(p=>{const t=esc(p[1]);if(p[0]===0){ha+=t;hb+=t}else if(p[0]===-1)ha+=`<span class="hl">${t}</span>`;else hb+=`<span class="hl">${t}</span>`});
+  return[ha,hb];
+}
+function diffLines(a,b){
+  const m=a.length,n=b.length,max=m+n;if(max===0)return[];
+  const v=new Int32Array(2*max+1),tr=[];v[max+1]=0;
+  for(let d=0;d<=max;d++){tr.push(v.slice());for(let k=-d;k<=d;k+=2){let x=k===-d||k!==d&&v[max+k-1]<v[max+k+1]?v[max+k+1]:v[max+k-1]+1,y=x-k;while(x<m&&y<n&&a[x]===b[y]){x++;y++}v[max+k]=x;if(x>=m&&y>=n)return bO(tr,a,b,max)}}return[];
+}
+function bO(tr,a,b,max){
+  let x=a.length,y=b.length;const ops=[];
+  for(let d=tr.length-1;d>0;d--){const v=tr[d-1],k=x-y,pk=k===-d||k!==d&&v[max+k-1]<v[max+k+1]?k+1:k-1,px=v[max+pk],py=px-pk;while(x>px&&y>py){x--;y--;ops.push({type:'equal',ln1:x+1,ln2:y+1,text:a[x]})}if(x>px){x--;ops.push({type:'delete',ln1:x+1,text:a[x]})}else if(y>py){y--;ops.push({type:'insert',ln2:y+1,text:b[y]})}}
+  while(x>0&&y>0){x--;y--;ops.push({type:'equal',ln1:x+1,ln2:y+1,text:a[x]})}while(x>0){x--;ops.push({type:'delete',ln1:x+1,text:a[x]})}while(y>0){y--;ops.push({type:'insert',ln2:y+1,text:b[y]})}ops.reverse();
+  const mg=[];for(let i=0;i<ops.length;i++){const o=ops[i];if(o.type==='delete'&&i+1<ops.length&&ops[i+1].type==='insert'){mg.push({type:'replace',ln1:o.ln1,ln2:ops[i+1].ln2,text1:o.text,text2:ops[i+1].text});i++}else mg.push(o)}return mg;
+}
+function dC(a,b){
+  if(a===b)return a?[[0,a]]:[];if(!a)return[[1,b]];if(!b)return[[-1,a]];
+  const m=a.length,n=b.length,max=m+n,v=new Int32Array(2*max+1),tr=[];v[max+1]=0;
+  for(let d=0;d<=max;d++){tr.push(v.slice());for(let k=-d;k<=d;k+=2){let x=k===-d||k!==d&&v[max+k-1]<v[max+k+1]?v[max+k+1]:v[max+k-1]+1,y=x-k;while(x<m&&y<n&&a[x]===b[y]){x++;y++}v[max+k]=x;if(x>=m&&y>=n)return bT(tr,a,b,max)}}return[[-1,a],[1,b]];
+}
+function bT(tr,a,b,max){
+  let x=a.length,y=b.length;const r=[];
+  for(let d=tr.length-1;d>0;d--){const v=tr[d-1],k=x-y,pk=k===-d||k!==d&&v[max+k-1]<v[max+k+1]?k+1:k-1,px=v[max+pk],py=px-pk;while(x>px&&y>py){x--;y--;r.push([0,a[x]])}if(x>px){x--;r.push([-1,a[x]])}else if(y>py){y--;r.push([1,b[y]])}}
+  while(x>0&&y>0){x--;y--;r.push([0,a[x]])}while(x>0){x--;r.push([-1,a[x]])}while(y>0){y--;r.push([1,b[y]])}r.reverse();
+  const mg=[];r.forEach(p=>{if(mg.length&&mg[mg.length-1][0]===p[0])mg[mg.length-1][1]+=p[1];else mg.push([p[0],p[1]])});return mg;
+}
+function swap(){const t1=document.getElementById('t1'),t2=document.getElementById('t2');[t1.value,t2.value]=[t2.value,t1.value]}
+function clearAll(){['t1','t2','r1','r2'].forEach(id=>document.getElementById(id)[id[0]==='t'?'value':'innerHTML']='');document.getElementById('stats').innerHTML=''}
+</script>
+</body>
+</html>
