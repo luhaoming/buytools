@@ -5,99 +5,130 @@
     <title>Curl 清理工具</title>
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f0f2f5;
+            font-family: 'Playfair Display', Georgia, serif;
+            background-color: #fafafa;
+            color: #222;
+            margin: 0;
+            padding: 0;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            margin: 0;
         }
 
         .container {
             background-color: #fff;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 60px 80px;
+            border-radius: 20px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+            max-width: 900px;
             width: 100%;
-            max-width: 700px;
             box-sizing: border-box;
+        }
+
+        h1 {
+            font-size: 3rem;
             text-align: center;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
         }
 
         h2 {
-            color: #333;
-            margin-bottom: 10px;
+            text-align: center;
+            font-size: 1.4rem;
+            color: #666;
+            margin-bottom: 40px;
+            font-weight: normal;
         }
 
-        p {
-            color: #666;
-            margin-bottom: 25px;
+        .editor {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
         }
 
         textarea {
             width: 100%;
-            height: 180px;
-            margin-bottom: 15px;
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            resize: vertical;
+            height: 300px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            padding: 20px;
             font-family: 'Courier New', Courier, monospace;
-            font-size: 14px;
-            box-sizing: border-box;
+            font-size: 15px;
+            line-height: 1.5;
+            background: #fdfdfd;
+            transition: all 0.3s ease;
+        }
+
+        textarea:focus {
+            border-color: #007aff;
+            box-shadow: 0 0 8px rgba(0, 122, 255, 0.2);
+            outline: none;
         }
 
         .button-group {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin-top: 15px;
+            text-align: center;
+            margin-top: 40px;
         }
 
         button {
-            padding: 12px 25px;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
+            font-family: 'Helvetica Neue', sans-serif;
             font-weight: bold;
+            font-size: 18px;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 12px;
+            margin: 0 10px;
             cursor: pointer;
-            transition: background-color 0.3s, transform 0.2s;
+            transition: all 0.3s ease;
         }
 
         #cleanBtn {
-            background-color: #007aff;
+            background: #000;
             color: #fff;
         }
 
         #cleanBtn:hover {
-            background-color: #005bb5;
-            transform: translateY(-2px);
+            background: #333;
+            transform: scale(1.05);
         }
 
         #copyBtn {
-            background-color: #e9ecef;
+            background: #f0f0f0;
             color: #333;
         }
 
         #copyBtn:hover {
-            background-color: #d8dadc;
-            transform: translateY(-2px);
+            background: #e0e0e0;
+            transform: scale(1.05);
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 60px;
+            color: #888;
+            font-size: 0.9rem;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>Curl 命令清理</h2>
-        <p>貼上 curl (bash) 指令，點擊清理後複製。</p>
+        <h1>Curl 清理工具</h1>
+        <h2>清理廣告追蹤，只保留必要欄位。</h2>
 
-        <textarea id="inputArea" placeholder="貼上 curl 命令..."></textarea>
-        <textarea id="outputArea" placeholder="清理結果..." readonly></textarea>
-        
+        <div class="editor">
+            <textarea id="inputArea" placeholder="貼上 curl 命令..."></textarea>
+            <textarea id="outputArea" placeholder="清理結果..." readonly></textarea>
+        </div>
+
         <div class="button-group">
             <button id="cleanBtn" onclick="cleanCurl()">清理</button>
             <button id="copyBtn" onclick="copyToClipboard()">複製</button>
         </div>
+
+        <footer>
+            🧹 一鍵清理你的 curl，保持簡潔與安全。
+        </footer>
     </div>
 
     <script>
