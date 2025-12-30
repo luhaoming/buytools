@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>Fetch 必要 Header 抽取工具</title>
+  <style>
+    body { font-family: monospace; margin: 10px; }
+    textarea { width: 100%; height: 220px; }
+    .row { display: flex; gap: 10px; }
+    .col { flex: 1; }
+    button { padding: 6px 12px; margin: 6px 0; }
+  </style>
+</head>
+<body>
+  <h3>Fetch 必要 Header 抽取工具</h3>
+  <div class="row">
+    <div class="col">
+      <div>原始 fetch：</div>
+      <textarea id="input"></textarea>
+    </div>
+    <div class="col">
+      <div>抽取後 fetch（可直接在 console 執行）：</div>
+      <textarea id="output" readonly></textarea>
+    </div>
+  </div>
+  <button id="run">抽取</button>
+  <button id="copy">複製結果</button>
+  <pre id="msg"></pre>
+
+  <script>
+    const removeHeader = [
+      "sec-ch-ua","sec-ch-ua-mobile","sec-ch-ua-platform",
+      "sec-fetch-dest","sec-fetch-mode","sec-fetch-site",
+      "sec-gpc","accept-language","priority",
+      "cache-control","pragma","x-requested-with"
+    ];
+
+    function extractFetchParts(src) {
+      const idx = src.indexOf("fetch");
+      if (idx < 0) return null;
+      const start = src.indexOf("(", idx);
+      const end = src.lastIndexOf(")");
+      if (start < 0 || end < 0 || end <= start) return null;
+      const inner = src.slice(start + 1, end);
+      const firstComma = inner.indexOf(",");
+      if (firstComma < 0) return null;
+      const rawUrl = inner.slice(0, firstComma).trim();
+      const rawOpt = inner.slice(firstComma + 1).trim();
+
+      const url = rawUrl.replace(/^['"`]/, "").replace(/['"`]$/, "");
+      let opt = {};
+      try {
+        opt = Function("return " + rawOpt)();
+      } catch (e) {
+        return null;
+      }
+      return { url, opt };
+    }
+
+    function cleanHeaders(h) {
+      const out = {};
+      for (const [k, v] of Object.entries(h)) {
+        const key = k.toLowerCase();
+        if (removeHeader.includes(key)) continue;
+        if (key.startsWith("sec-")) continue;
+        out[k] = v;
+      }
+      return out;
+    }
+
+    function simplify(src) {
+      const p = extractFetchParts(src);
+      if (!p) return { error: "格式不正確" };
+
+      const out = {};
+      const opt = p.opt;
+
+      out.method = opt.method || "GET";
+
+      if (opt.headers) {
+        out.headers = cleanHeaders(opt.headers);
+      }
+
+      if (opt.body) out.body = opt.body;
+
+      if (opt.credentials) out.credentials = opt.credentials;
+      if (opt.referrer) out.referrer = opt.referrer;
+      if (opt.mode) out.mode = opt.mode;
+
+      const code =
+        `fetch("${p.url}", ` +
+        JSON.stringify(out, null, 2) +
+        ");";
+
+      return { code };
+    }
+
+    document.getElementById("run").onclick = () => {
+      const src = document.getElementById("input").value.trim();
+      const msg = document.getElementById("msg");
+      const out = document.getElementById("output");
+
+      msg.textContent = "";
+      out.value = "";
+
+      if (!src) {
+        msg.textContent = "請貼上 fetch 指令";
+        return;
+      }
+      const r = simplify(src);
+      if (r.error) {
+        msg.textContent = r.error;
+        return;
+      }
+      out.value = r.code;
+    };
+
+    document.getElementById("copy").onclick = () => {
+      const out = document.getElementById("output");
+      out.select();
+      document.execCommand("copy");
+    };
+  </script>
+</body>
+</html>

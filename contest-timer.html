@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Contest Timer</title>
+<style>
+:root {
+  --font: Consolas, Menlo, Monaco, monospace;
+}
+
+body {
+  margin: 0;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: var(--font);
+  font-weight: bold;
+  user-select: none;
+  cursor: pointer;
+  transition: background-color .2s, color .2s;
+}
+
+#container {
+  text-align: center;
+  width: 100%;
+}
+
+/* ===== 顯示 ===== */
+#label {
+  font-size: 6vw;
+  opacity: .85;
+}
+
+#time {
+  font-size: 20vw;
+  line-height: 1;
+  margin-top: 2vh;
+}
+
+/* ===== 控制列 ===== */
+#controls {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  background: rgba(255,255,255,.2);
+  padding: 4px;
+  border-radius: 4px;
+  backdrop-filter: blur(2px);
+}
+
+#controls button {
+  font-size: 12px;
+  padding: 2px 6px;
+}
+
+/* ===== 狀態顏色 ===== */
+body.normal { background:#000; color:#fff; }
+body.end    { background:#8B0000; color:#fff; }
+</style>
+</head>
+
+<body class="normal">
+
+<div id="controls">
+  <!-- Round -->
+  <button onclick="setRound(2,3)">Round 3×2m</button>
+  <button onclick="setRound(3,3)">Round 3×3m</button>
+
+  <!-- Phase -->
+  <button onclick="setPhase('BP',3)">BP 3m</button>
+  <button onclick="setPhase('MATCH',45)">MATCH 45m</button>
+
+  <!-- Total -->
+  <button onclick="setTotal(60)">Total 60m</button>
+  <button onclick="setTotal(90)">Total 90m</button>
+  <button onclick="setTotal(120)">Total 120m</button>
+</div>
+
+<div id="container">
+  <div id="label">READY</div>
+  <div id="time">00:00</div>
+</div>
+
+<script>
+let mode = '';
+let roundTime = 0;
+let rounds = 0;
+let currentRound = 0;
+
+let remain = 0;
+let running = false;
+let lastTick = 0;
+
+const label = document.getElementById('label');
+const timeEl = document.getElementById('time');
+const body = document.body;
+
+const pad = n => n.toString().padStart(2,'0');
+
+/* ===== Beep（強制型） ===== */
+function beep(){
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const o = ctx.createOscillator();
+  o.frequency.value = 1200;
+  o.connect(ctx.destination);
+  o.start();
+  o.stop(ctx.currentTime + 0.25);
+}
+
+/* ===== 設定模式 ===== */
+function setRound(min, cnt){
+  mode = 'round';
+  roundTime = min * 60;
+  rounds = cnt;
+  currentRound = 1;
+  remain = roundTime;
+  running = false;
+  body.className = 'normal';
+  update();
+}
+
+function setPhase(name, min){
+  mode = 'phase';
+  label.textContent = name;
+  remain = min * 60;
+  running = false;
+  body.className = 'normal';
+  update();
+}
+
+function setTotal(min){
+  mode = 'total';
+  label.textContent = 'TOTAL';
+  remain = min * 60;
+  running = false;
+  body.className = 'normal';
+  update();
+}
+
+/* ===== 主循環 ===== */
+function tick(ts){
+  if(!running){
+    requestAnimationFrame(tick);
+    return;
+  }
+
+  if(!lastTick) lastTick = ts;
+  if(ts - lastTick >= 1000){
+    remain--;
+    lastTick = ts;
+
+    if(remain <= 0){
+      running = false;
+      body.className = 'end';
+      label.textContent = 'TIME UP';
+      beep();
+    }
+    update();
+  }
+  requestAnimationFrame(tick);
+}
+
+/* ===== 顯示 ===== */
+function update(){
+  const m = Math.floor(remain / 60);
+  const s = remain % 60;
+  timeEl.textContent = `${pad(m)}:${pad(s)}`;
+
+  if(mode === 'round'){
+    label.textContent = `ROUND ${currentRound}/${rounds}`;
+  }
+}
+
+/* ===== 操作 ===== */
+document.addEventListener('keydown', e=>{
+  if(e.code === 'Space'){
+    running = !running;
+    lastTick = 0;
+  }
+
+  if(e.key === 'n' || e.key === 'N'){
+    if(mode === 'round' && currentRound < rounds){
+      currentRound++;
+      remain = roundTime;
+      running = false;
+      body.className = 'normal';
+      update();
+    }
+  }
+});
+
+requestAnimationFrame(tick);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Talk Timer</title>
+<style>
+:root {
+  --font-stack: 'Consolas','Menlo','Monaco','Lucida Console',monospace;
+}
+
+body {
+  margin: 0;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: var(--font-stack);
+  font-weight: bold;
+  user-select: none;
+  cursor: pointer;
+  transition: background-color .2s,color .2s;
+}
+
+/* ===== 主容器 ===== */
+#container {
+  text-align: center;
+  width: 100%;
+}
+
+/* ===== 大字模式 ===== */
+.mode-fit #time-main {
+  font-size: 20vw;
+  line-height: 1;
+}
+.mode-fit #status {
+  font-size: 4vw;
+  margin-top: 2vh;
+  opacity: .85;
+}
+.mode-fit #info {
+  display: none;
+}
+
+/* ===== 小字模式 ===== */
+.mode-fixed #time-main,
+.mode-fixed #status {
+  display: none;
+}
+.mode-fixed #info {
+  font-size: 16pt;
+}
+
+/* ===== 控制列 ===== */
+#controls {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  background: rgba(255,255,255,.2);
+  padding: 4px;
+  border-radius: 4px;
+  backdrop-filter: blur(2px);
+  z-index: 10;
+}
+
+#controls button {
+  font-size: 12px;
+  padding: 2px 6px;
+}
+
+/* ===== 可點開始提示 ===== */
+#status.start {
+  cursor: pointer;
+  opacity: 1;
+}
+#status.start:hover {
+  text-decoration: underline;
+}
+
+/* ===== 配色（timeis 同款） ===== */
+body.theme-blue   { background:#000080; color:#FFFF00; }
+body.theme-white  { background:#FFFFFF; color:#333333; }
+body.theme-matrix { background:#000000; color:#00FF00; }
+body.theme-dark   { background:#000000; color:#FFFFFF; }
+</style>
+</head>
+
+<body class="theme-blue mode-fit">
+
+<div id="controls">
+  <button onclick="setMinutes(5)">5m</button>
+  <button onclick="setMinutes(10)">10m</button>
+  <button onclick="setMinutes(15)">15m</button>
+  <button onclick="setMinutes(20)">20m</button>
+  <button onclick="setMinutes(30)">30m</button>
+  <button onclick="toggleMute(event)">Mute</button>
+  <button onclick="cycleTheme(event)">換色</button>
+</div>
+
+<div id="container">
+  <div id="time-main">00:00</div>
+  <div id="status" class="start">開始</div>
+  <div id="info">Total: -- min | Remaining: --:--</div>
+</div>
+
+<script>
+let totalSec = 0;
+let remainSec = 0;
+let running = false;
+let muted = false;
+let lastTick = 0;
+
+const body = document.body;
+const timeMain = document.getElementById('time-main');
+const statusEl = document.getElementById('status');
+const infoEl = document.getElementById('info');
+
+const pad = n => n.toString().padStart(2,'0');
+
+/* ===== 配色切換 ===== */
+const themes = ['theme-blue','theme-white','theme-matrix','theme-dark'];
+let themeIdx = 0;
+function cycleTheme(e){
+  if(e) e.stopPropagation();
+  body.classList.remove(themes[themeIdx]);
+  themeIdx = (themeIdx + 1) % themes.length;
+  body.classList.add(themes[themeIdx]);
+}
+
+/* ===== 大小切換 ===== */
+function toggleSize(){
+  const fit = body.classList.contains('mode-fit');
+  body.classList.toggle('mode-fit', !fit);
+  body.classList.toggle('mode-fixed', fit);
+}
+
+/* ===== 聲音 ===== */
+function beep(freq=800, dur=120){
+  if(muted) return;
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const osc = ctx.createOscillator();
+  osc.frequency.value = freq;
+  osc.connect(ctx.destination);
+  osc.start();
+  osc.stop(ctx.currentTime + dur/1000);
+}
+
+/* ===== 設定時間 ===== */
+function setMinutes(m){
+  totalSec = m * 60;
+  remainSec = totalSec;
+  running = false;
+  updateDisplay();
+  setStartState();
+}
+
+/* ===== 開始 ===== */
+function start(){
+  if(totalSec === 0) return;
+  running = true;
+  lastTick = 0;
+  statusEl.classList.remove('start');
+}
+
+/* ===== 狀態 ===== */
+function setStartState(){
+  statusEl.textContent = '開始';
+  statusEl.classList.add('start');
+}
+
+/* ===== 主循環 ===== */
+function tick(ts){
+  if(!running){
+    requestAnimationFrame(tick);
+    return;
+  }
+
+  if(!lastTick) lastTick = ts;
+  if(ts - lastTick >= 1000){
+    remainSec--;
+    lastTick = ts;
+
+    if(remainSec === 300){ statusEl.textContent = '5 minutes left'; beep(600); }
+    if(remainSec === 60){ statusEl.textContent = '1 minute left'; beep(900); beep(900); }
+    if(remainSec === 0){
+      statusEl.textContent = 'TIME UP';
+      beep(1200,200);
+      running = false;
+      setStartState();
+    }
+    updateDisplay();
+  }
+  requestAnimationFrame(tick);
+}
+
+/* ===== 顯示 ===== */
+function updateDisplay(){
+  const m = Math.floor(remainSec / 60);
+  const s = remainSec % 60;
+  timeMain.textContent = `${pad(m)}:${pad(s)}`;
+  infoEl.textContent = `Total: ${Math.floor(totalSec/60)} min | Remaining: ${pad(m)}:${pad(s)}`;
+}
+
+/* ===== 控制 ===== */
+function toggleMute(e){
+  if(e) e.stopPropagation();
+  muted = !muted;
+}
+
+statusEl.addEventListener('click', e=>{
+  e.stopPropagation();
+  if(!running) start();
+});
+
+document.addEventListener('keydown', e=>{
+  if(e.code === 'Space'){
+    running ? running=false : start();
+    lastTick = 0;
+  }
+  if(e.key === 'r' || e.key === 'R'){
+    remainSec = totalSec;
+    running = false;
+    updateDisplay();
+    setStartState();
+  }
+  if(e.key === 'm' || e.key === 'M'){
+    muted = !muted;
+  }
+});
+
+body.addEventListener('dblclick', e=>{
+  if(!e.target.closest('#controls')) toggleSize();
+});
+body.addEventListener('click', e=>{
+  if(!e.target.closest('#controls')) cycleTheme();
+});
+
+requestAnimationFrame(tick);
+</script>
+
+</body>
+</html>

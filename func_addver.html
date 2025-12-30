@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>函數版號更新器</title>
+<style>
+*{box-sizing:border-box;font-family:monospace}
+body{max-width:900px;margin:20px auto;padding:0 20px}
+h1{font-size:1.2em}
+textarea{width:100%;height:300px;font-size:14px}
+.ctrl{margin:15px 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+input[type=number]{width:80px;padding:5px}
+button{padding:8px 16px;cursor:pointer}
+.detected{color:#666;font-size:12px}
+</style>
+</head>
+<body>
+<h1>🔧 函數版號更新器</h1>
+<p style="color:#666;margin:0">貼上 GAS 程式碼，自動將所有 function 名稱加上 _vN 版號後綴（或清除）</p>
+
+<div class="ctrl">
+  <label><input type="radio" name="mode" value="auto" checked> 自動 +1</label>
+  <label><input type="radio" name="mode" value="add"> 指定版號 v</label>
+  <input type="number" id="ver" value="1" min="1">
+  <label><input type="radio" name="mode" value="clear"> 清除版號</label>
+  <button onclick="convert()">轉換</button>
+  <span class="detected" id="detected"></span>
+</div>
+
+<h3>輸入</h3>
+<textarea id="input" placeholder="貼上 GAS function 程式碼..." oninput="detect()"></textarea>
+
+<h3>輸出 <button onclick="copy()">複製</button></h3>
+<textarea id="output" readonly></textarea>
+
+<script>
+function copy() {
+  navigator.clipboard.writeText(document.getElementById('output').value);
+}
+
+function detect() {
+  const code = document.getElementById('input').value;
+  const match = code.match(/function\s+\w+_v(\d+)\s*\(/);
+  const cur = match ? parseInt(match[1]) : 0;
+  document.getElementById('detected').textContent = cur ? `偵測: v${cur} → v${cur + 1}` : '偵測: 無版號 → v1';
+  return cur;
+}
+
+function convert() {
+  const code = document.getElementById('input').value;
+  const mode = document.querySelector('input[name="mode"]:checked').value;
+  
+  let result = code;
+  
+  if (mode === 'auto') {
+    const cur = detect();
+    const next = cur + 1;
+    result = code.replace(/function\s+(\w+?)(_v\d+)?\s*\(/g, `function $1_v${next}(`);
+  }
+  
+  if (mode === 'add') {
+    const ver = document.getElementById('ver').value;
+    result = code.replace(/function\s+(\w+?)(_v\d+)?\s*\(/g, `function $1_v${ver}(`);
+  }
+  
+  if (mode === 'clear') {
+    result = code.replace(/function\s+(\w+?)_v\d+\s*\(/g, 'function $1(');
+  }
+  
+  document.getElementById('output').value = result;
+}
+</script>
+</body>
+</html>
