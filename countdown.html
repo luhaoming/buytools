@@ -21,13 +21,11 @@ body {
   transition: background-color .2s,color .2s;
 }
 
-/* ===== 容器 ===== */
 #container {
   text-align: center;
   width: 100%;
 }
 
-/* ===== 大字模式 ===== */
 .mode-fit #time-main {
   font-size: 18vw;
   line-height: 1;
@@ -37,21 +35,15 @@ body {
   margin-top: 2vh;
   opacity: .8;
 }
-.mode-fit #time-full {
-  display: none;
-}
+.mode-fit #time-full { display: none; }
 
-/* ===== 小字模式 ===== */
 .mode-fixed #time-main,
-.mode-fixed #date {
-  display: none;
-}
+.mode-fixed #date { display: none; }
 .mode-fixed #time-full {
   font-size: 16pt;
   white-space: nowrap;
 }
 
-/* ===== 控制列 ===== */
 #controls {
   position: fixed;
   top: 10px;
@@ -72,11 +64,38 @@ body {
   padding: 2px 6px;
 }
 
-/* ===== 配色（timeis 同款） ===== */
 body.theme-blue   { background:#000080; color:#FFFF00; }
 body.theme-white  { background:#FFFFFF; color:#333333; }
 body.theme-matrix { background:#000000; color:#00FF00; }
 body.theme-dark   { background:#000000; color:#FFFFFF; }
+
+@media (max-width: 600px) and (orientation: portrait) {
+  #controls {
+    top: auto;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 20px);
+    justify-content: center;
+    padding: 8px;
+    gap: 8px;
+  }
+
+  #controls button,
+  #controls input {
+    font-size: 16px;
+    padding: 8px 12px;
+  }
+
+  #controls input[type="datetime-local"] {
+    flex: 1 1 100%;
+  }
+
+  #controls button {
+    flex: 1 1 auto;
+    min-width: 64px;
+  }
+}
 </style>
 </head>
 
@@ -84,16 +103,13 @@ body.theme-dark   { background:#000000; color:#FFFFFF; }
 
 <div id="controls">
   <input type="datetime-local" id="dt">
-
   <button onclick="startMinutes(5)">5m</button>
   <button onclick="startMinutes(10)">10m</button>
   <button onclick="startMinutes(15)">15m</button>
   <button onclick="startMinutes(60)">60m</button>
-
   <button onclick="toNextMark(15)">→15</button>
   <button onclick="toNextMark(30)">→30</button>
   <button onclick="toNextHour()">→00</button>
-
   <button onclick="cycleTheme(event)">換色</button>
 </div>
 
@@ -112,7 +128,6 @@ const timeMain = document.getElementById('time-main');
 const timeFull = document.getElementById('time-full');
 const dateEl   = document.getElementById('date');
 
-/* ===== 配色切換 ===== */
 const themes = ['theme-blue','theme-white','theme-matrix','theme-dark'];
 let themeIdx = 0;
 function cycleTheme(e){
@@ -122,14 +137,12 @@ function cycleTheme(e){
   body.classList.add(themes[themeIdx]);
 }
 
-/* ===== 尺寸切換 ===== */
 function toggleSize(){
   const fit = body.classList.contains('mode-fit');
   body.classList.toggle('mode-fit', !fit);
   body.classList.toggle('mode-fixed', fit);
 }
 
-/* ===== 倒數設定 ===== */
 function startMinutes(m){
   target = performance.now() + m * 60000;
   requestAnimationFrame(tick);
@@ -161,7 +174,6 @@ document.getElementById('dt').addEventListener('change', e=>{
   }
 });
 
-/* ===== 主循環 ===== */
 function tick(now){
   if(!target) return;
 
@@ -191,7 +203,6 @@ function tick(now){
   requestAnimationFrame(tick);
 }
 
-/* ===== 互動 ===== */
 body.addEventListener('click', e=>{
   if(!e.target.closest('#controls')) cycleTheme();
 });
