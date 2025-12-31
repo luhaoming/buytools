@@ -2,6 +2,7 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Countdown</title>
 <style>
 :root {
@@ -48,20 +49,39 @@ body {
   position: fixed;
   top: 10px;
   left: 10px;
+  right: 10px;
   display: flex;
-  gap: 6px;
+  gap: 8px;
   flex-wrap: wrap;
-  background: rgba(255,255,255,.2);
-  padding: 4px;
-  border-radius: 4px;
-  backdrop-filter: blur(2px);
+  background: rgba(128,128,128,.3);
+  padding: 8px;
+  border-radius: 8px;
+  backdrop-filter: blur(4px);
   z-index: 10;
 }
 
 #controls button,
 #controls input {
-  font-size: 12px;
-  padding: 2px 6px;
+  font-family: var(--font-stack);
+  font-size: 16px;
+  font-weight: bold;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255,255,255,.9);
+  color: #333;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+#controls button:active {
+  background: rgba(200,200,200,.9);
+  transform: scale(.95);
+}
+
+#controls input[type="datetime-local"] {
+  flex: 1 1 100%;
+  min-width: 0;
 }
 
 body.theme-blue   { background:#000080; color:#FFFF00; }
@@ -69,31 +89,64 @@ body.theme-white  { background:#FFFFFF; color:#333333; }
 body.theme-matrix { background:#000000; color:#00FF00; }
 body.theme-dark   { background:#000000; color:#FFFFFF; }
 
-@media (max-width: 600px) and (orientation: portrait) {
+#footer {
+  position: fixed;
+  bottom: 10px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 14px;
+  opacity: .5;
+}
+
+/* 小手機 portrait */
+@media (max-width: 480px) {
   #controls {
     top: auto;
-    bottom: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: calc(100% - 20px);
+    bottom: 0;
+    left: 0;
+    right: 0;
+    border-radius: 0;
+    padding: 12px;
+    gap: 10px;
     justify-content: center;
-    padding: 8px;
-    gap: 8px;
-  }
-
-  #controls button,
-  #controls input {
-    font-size: 16px;
-    padding: 8px 12px;
-  }
-
-  #controls input[type="datetime-local"] {
-    flex: 1 1 100%;
   }
 
   #controls button {
-    flex: 1 1 auto;
-    min-width: 64px;
+    flex: 1 1 calc(25% - 10px);
+    min-width: 60px;
+    padding: 14px 8px;
+    font-size: 15px;
+  }
+
+  #controls input[type="datetime-local"] {
+    padding: 14px 12px;
+    font-size: 16px;
+  }
+
+  .mode-fit #time-main { font-size: 22vw; }
+  .mode-fit #date { font-size: 5vw; }
+  #footer { bottom: 130px; }
+}
+
+/* 更小螢幕 */
+@media (max-width: 360px) {
+  #controls button {
+    flex: 1 1 calc(25% - 8px);
+    padding: 12px 4px;
+    font-size: 13px;
+  }
+}
+
+/* 大螢幕 */
+@media (min-width: 768px) {
+  #controls {
+    right: auto;
+    max-width: 600px;
+  }
+  
+  #controls input[type="datetime-local"] {
+    flex: 0 0 auto;
   }
 }
 </style>
@@ -118,6 +171,8 @@ body.theme-dark   { background:#000000; color:#FFFFFF; }
   <div id="date"></div>
   <div id="time-full"></div>
 </div>
+
+<div id="footer">倒數計時器</div>
 
 <script>
 let target = 0;

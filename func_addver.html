@@ -2,21 +2,146 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>函數版號更新器</title>
 <style>
-*{box-sizing:border-box;font-family:monospace}
-body{max-width:900px;margin:20px auto;padding:0 20px}
-h1{font-size:1.2em}
-textarea{width:100%;height:300px;font-size:14px}
-.ctrl{margin:15px 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-input[type=number]{width:80px;padding:5px}
-button{padding:8px 16px;cursor:pointer}
-.detected{color:#666;font-size:12px}
+* {
+  box-sizing: border-box;
+}
+
+body {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 30px 24px 60px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #f8f9fa;
+  color: #2d3436;
+  line-height: 1.6;
+}
+
+.desc {
+  color: #636e72;
+  margin-bottom: 20px;
+  font-size: 15px;
+}
+
+.ctrl {
+  margin-bottom: 24px;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.ctrl label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+input[type=number] {
+  width: 70px;
+  padding: 8px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: Consolas, Monaco, monospace;
+}
+
+input[type=number]:focus {
+  outline: none;
+  border-color: #74b9ff;
+  box-shadow: 0 0 0 3px rgba(116,185,255,.2);
+}
+
+button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  background: #0984e3;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .15s;
+}
+
+button:hover {
+  background: #0773c7;
+}
+
+button:active {
+  transform: scale(.98);
+}
+
+.detected {
+  color: #636e72;
+  font-size: 13px;
+  font-family: Consolas, Monaco, monospace;
+}
+
+h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #555;
+  margin: 0 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+h3 button {
+  padding: 5px 12px;
+  font-size: 12px;
+  background: #636e72;
+}
+
+h3 button:hover {
+  background: #555;
+}
+
+textarea {
+  width: 100%;
+  height: 280px;
+  padding: 14px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: Consolas, Monaco, monospace;
+  background: #fff;
+  resize: vertical;
+  margin-bottom: 24px;
+}
+
+textarea:focus {
+  outline: none;
+  border-color: #74b9ff;
+  box-shadow: 0 0 0 3px rgba(116,185,255,.2);
+}
+
+textarea[readonly] {
+  background: #fdfdfd;
+  color: #444;
+}
+
+#footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 13px;
+  padding: 12px;
+  background: rgba(248,249,250,.9);
+  color: #888;
+  backdrop-filter: blur(4px);
+}
 </style>
 </head>
 <body>
-<h1>🔧 函數版號更新器</h1>
-<p style="color:#666;margin:0">貼上 GAS 程式碼，自動將所有 function 名稱加上 _vN 版號後綴（或清除）</p>
+
+<p class="desc">貼上 GAS 程式碼，自動將所有 function 名稱加上 _vN 版號後綴（或清除）</p>
 
 <div class="ctrl">
   <label><input type="radio" name="mode" value="auto" checked> 自動 +1</label>
@@ -32,6 +157,8 @@ button{padding:8px 16px;cursor:pointer}
 
 <h3>輸出 <button onclick="copy()">複製</button></h3>
 <textarea id="output" readonly></textarea>
+
+<div id="footer">函數版號更新器</div>
 
 <script>
 function copy() {

@@ -2,6 +2,7 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Talk Timer</title>
 <style>
 :root {
@@ -21,13 +22,11 @@ body {
   transition: background-color .2s,color .2s;
 }
 
-/* ===== 主容器 ===== */
 #container {
   text-align: center;
   width: 100%;
 }
 
-/* ===== 大字模式 ===== */
 .mode-fit #time-main {
   font-size: 20vw;
   line-height: 1;
@@ -37,53 +36,111 @@ body {
   margin-top: 2vh;
   opacity: .85;
 }
-.mode-fit #info {
-  display: none;
-}
+.mode-fit #info { display: none; }
 
-/* ===== 小字模式 ===== */
 .mode-fixed #time-main,
-.mode-fixed #status {
-  display: none;
-}
-.mode-fixed #info {
-  font-size: 16pt;
-}
+.mode-fixed #status { display: none; }
+.mode-fixed #info { font-size: 16pt; }
 
-/* ===== 控制列 ===== */
 #controls {
   position: fixed;
   top: 10px;
   left: 10px;
+  right: 10px;
   display: flex;
-  gap: 6px;
+  gap: 8px;
   flex-wrap: wrap;
-  background: rgba(255,255,255,.2);
-  padding: 4px;
-  border-radius: 4px;
-  backdrop-filter: blur(2px);
+  background: rgba(128,128,128,.3);
+  padding: 8px;
+  border-radius: 8px;
+  backdrop-filter: blur(4px);
   z-index: 10;
 }
 
 #controls button {
-  font-size: 12px;
-  padding: 2px 6px;
+  font-family: var(--font-stack);
+  font-size: 16px;
+  font-weight: bold;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255,255,255,.9);
+  color: #333;
+  cursor: pointer;
+  touch-action: manipulation;
 }
 
-/* ===== 可點開始提示 ===== */
+#controls button:active {
+  background: rgba(200,200,200,.9);
+  transform: scale(.95);
+}
+
+#controls button.active {
+  background: rgba(255,100,100,.9);
+}
+
 #status.start {
   cursor: pointer;
   opacity: 1;
 }
-#status.start:hover {
-  text-decoration: underline;
-}
+#status.start:hover { text-decoration: underline; }
 
-/* ===== 配色（timeis 同款） ===== */
 body.theme-blue   { background:#000080; color:#FFFF00; }
 body.theme-white  { background:#FFFFFF; color:#333333; }
 body.theme-matrix { background:#000000; color:#00FF00; }
 body.theme-dark   { background:#000000; color:#FFFFFF; }
+
+#footer {
+  position: fixed;
+  bottom: 10px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 14px;
+  opacity: .5;
+}
+
+/* 小手機 */
+@media (max-width: 480px) {
+  #controls {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    border-radius: 0;
+    padding: 12px;
+    gap: 10px;
+    justify-content: center;
+  }
+
+  #controls button {
+    flex: 1 1 calc(25% - 10px);
+    min-width: 50px;
+    padding: 14px 8px;
+    font-size: 15px;
+  }
+
+  .mode-fit #time-main { font-size: 24vw; }
+  .mode-fit #status { font-size: 6vw; }
+  #footer { bottom: 120px; }
+}
+
+/* 更小螢幕 */
+@media (max-width: 360px) {
+  #controls button {
+    flex: 1 1 calc(25% - 8px);
+    padding: 12px 4px;
+    font-size: 13px;
+  }
+}
+
+/* 大螢幕 */
+@media (min-width: 768px) {
+  #controls {
+    right: auto;
+    max-width: 500px;
+  }
+}
 </style>
 </head>
 
@@ -95,7 +152,7 @@ body.theme-dark   { background:#000000; color:#FFFFFF; }
   <button onclick="setMinutes(15)">15m</button>
   <button onclick="setMinutes(20)">20m</button>
   <button onclick="setMinutes(30)">30m</button>
-  <button onclick="toggleMute(event)">Mute</button>
+  <button id="muteBtn" onclick="toggleMute(event)">🔊</button>
   <button onclick="cycleTheme(event)">換色</button>
 </div>
 
@@ -105,21 +162,19 @@ body.theme-dark   { background:#000000; color:#FFFFFF; }
   <div id="info">Total: -- min | Remaining: --:--</div>
 </div>
 
+<div id="footer">演講/辯論計時器</div>
+
 <script>
-let totalSec = 0;
-let remainSec = 0;
-let running = false;
-let muted = false;
-let lastTick = 0;
+let totalSec = 0, remainSec = 0, running = false, muted = false, lastTick = 0;
 
 const body = document.body;
 const timeMain = document.getElementById('time-main');
 const statusEl = document.getElementById('status');
 const infoEl = document.getElementById('info');
+const muteBtn = document.getElementById('muteBtn');
 
 const pad = n => n.toString().padStart(2,'0');
 
-/* ===== 配色切換 ===== */
 const themes = ['theme-blue','theme-white','theme-matrix','theme-dark'];
 let themeIdx = 0;
 function cycleTheme(e){
@@ -129,14 +184,12 @@ function cycleTheme(e){
   body.classList.add(themes[themeIdx]);
 }
 
-/* ===== 大小切換 ===== */
 function toggleSize(){
   const fit = body.classList.contains('mode-fit');
   body.classList.toggle('mode-fit', !fit);
   body.classList.toggle('mode-fixed', fit);
 }
 
-/* ===== 聲音 ===== */
 function beep(freq=800, dur=120){
   if(muted) return;
   const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -147,7 +200,6 @@ function beep(freq=800, dur=120){
   osc.stop(ctx.currentTime + dur/1000);
 }
 
-/* ===== 設定時間 ===== */
 function setMinutes(m){
   totalSec = m * 60;
   remainSec = totalSec;
@@ -156,7 +208,6 @@ function setMinutes(m){
   setStartState();
 }
 
-/* ===== 開始 ===== */
 function start(){
   if(totalSec === 0) return;
   running = true;
@@ -164,18 +215,13 @@ function start(){
   statusEl.classList.remove('start');
 }
 
-/* ===== 狀態 ===== */
 function setStartState(){
   statusEl.textContent = '開始';
   statusEl.classList.add('start');
 }
 
-/* ===== 主循環 ===== */
 function tick(ts){
-  if(!running){
-    requestAnimationFrame(tick);
-    return;
-  }
+  if(!running){ requestAnimationFrame(tick); return; }
 
   if(!lastTick) lastTick = ts;
   if(ts - lastTick >= 1000){
@@ -195,7 +241,6 @@ function tick(ts){
   requestAnimationFrame(tick);
 }
 
-/* ===== 顯示 ===== */
 function updateDisplay(){
   const m = Math.floor(remainSec / 60);
   const s = remainSec % 60;
@@ -203,10 +248,11 @@ function updateDisplay(){
   infoEl.textContent = `Total: ${Math.floor(totalSec/60)} min | Remaining: ${pad(m)}:${pad(s)}`;
 }
 
-/* ===== 控制 ===== */
 function toggleMute(e){
   if(e) e.stopPropagation();
   muted = !muted;
+  muteBtn.textContent = muted ? '🔇' : '🔊';
+  muteBtn.classList.toggle('active', muted);
 }
 
 statusEl.addEventListener('click', e=>{
@@ -215,27 +261,13 @@ statusEl.addEventListener('click', e=>{
 });
 
 document.addEventListener('keydown', e=>{
-  if(e.code === 'Space'){
-    running ? running=false : start();
-    lastTick = 0;
-  }
-  if(e.key === 'r' || e.key === 'R'){
-    remainSec = totalSec;
-    running = false;
-    updateDisplay();
-    setStartState();
-  }
-  if(e.key === 'm' || e.key === 'M'){
-    muted = !muted;
-  }
+  if(e.code === 'Space'){ running ? running=false : start(); lastTick = 0; }
+  if(e.key === 'r' || e.key === 'R'){ remainSec = totalSec; running = false; updateDisplay(); setStartState(); }
+  if(e.key === 'm' || e.key === 'M') toggleMute();
 });
 
-body.addEventListener('dblclick', e=>{
-  if(!e.target.closest('#controls')) toggleSize();
-});
-body.addEventListener('click', e=>{
-  if(!e.target.closest('#controls')) cycleTheme();
-});
+body.addEventListener('dblclick', e=>{ if(!e.target.closest('#controls')) toggleSize(); });
+body.addEventListener('click', e=>{ if(!e.target.closest('#controls')) cycleTheme(); });
 
 requestAnimationFrame(tick);
 </script>

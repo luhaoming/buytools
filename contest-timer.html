@@ -2,6 +2,7 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Contest Timer</title>
 <style>
 :root {
@@ -26,7 +27,6 @@ body {
   width: 100%;
 }
 
-/* ===== 顯示 ===== */
 #label {
   font-size: 6vw;
   opacity: .85;
@@ -38,46 +38,126 @@ body {
   margin-top: 2vh;
 }
 
-/* ===== 控制列 ===== */
 #controls {
   position: fixed;
   top: 10px;
   left: 10px;
+  right: 10px;
   display: flex;
-  gap: 6px;
+  gap: 8px;
   flex-wrap: wrap;
-  background: rgba(255,255,255,.2);
-  padding: 4px;
-  border-radius: 4px;
-  backdrop-filter: blur(2px);
+  background: rgba(128,128,128,.3);
+  padding: 8px;
+  border-radius: 8px;
+  backdrop-filter: blur(4px);
+  z-index: 10;
 }
 
 #controls button {
-  font-size: 12px;
-  padding: 2px 6px;
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: bold;
+  padding: 12px 14px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255,255,255,.9);
+  color: #333;
+  cursor: pointer;
+  touch-action: manipulation;
 }
 
-/* ===== 狀態顏色 ===== */
+#controls button:active {
+  background: rgba(200,200,200,.9);
+  transform: scale(.95);
+}
+
+#controls button.action {
+  background: rgba(100,200,100,.95);
+  color: #000;
+}
+
+#controls button.action:active {
+  background: rgba(80,170,80,.95);
+}
+
 body.normal { background:#000; color:#fff; }
 body.end    { background:#8B0000; color:#fff; }
+
+#footer {
+  position: fixed;
+  bottom: 10px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 14px;
+  opacity: .5;
+}
+
+/* 小手機 */
+@media (max-width: 480px) {
+  #controls {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    border-radius: 0;
+    padding: 10px;
+    gap: 8px;
+    justify-content: center;
+  }
+
+  #controls button {
+    flex: 1 1 calc(25% - 8px);
+    min-width: 60px;
+    padding: 14px 6px;
+    font-size: 13px;
+  }
+
+  #controls button.action {
+    flex: 1 1 calc(50% - 8px);
+    padding: 18px 6px;
+    font-size: 16px;
+  }
+
+  #label { font-size: 8vw; }
+  #time { font-size: 22vw; }
+  #footer { bottom: 140px; }
+}
+
+/* 更小螢幕 */
+@media (max-width: 360px) {
+  #controls button {
+    padding: 12px 4px;
+    font-size: 11px;
+  }
+  #controls button.action {
+    padding: 16px 4px;
+    font-size: 14px;
+  }
+}
+
+/* 大螢幕 */
+@media (min-width: 768px) {
+  #controls {
+    right: auto;
+    max-width: 600px;
+  }
+}
 </style>
 </head>
 
 <body class="normal">
 
 <div id="controls">
-  <!-- Round -->
-  <button onclick="setRound(2,3)">Round 3×2m</button>
-  <button onclick="setRound(3,3)">Round 3×3m</button>
-
-  <!-- Phase -->
+  <button onclick="setRound(2,3)">3x2m</button>
+  <button onclick="setRound(3,3)">3x3m</button>
   <button onclick="setPhase('BP',3)">BP 3m</button>
-  <button onclick="setPhase('MATCH',45)">MATCH 45m</button>
-
-  <!-- Total -->
-  <button onclick="setTotal(60)">Total 60m</button>
-  <button onclick="setTotal(90)">Total 90m</button>
-  <button onclick="setTotal(120)">Total 120m</button>
+  <button onclick="setPhase('MATCH',45)">45m</button>
+  <button onclick="setTotal(60)">60m</button>
+  <button onclick="setTotal(90)">90m</button>
+  <button onclick="setTotal(120)">120m</button>
+  <button class="action" onclick="toggle()" id="toggleBtn">START</button>
+  <button class="action" onclick="nextRound()">NEXT</button>
 </div>
 
 <div id="container">
@@ -85,23 +165,18 @@ body.end    { background:#8B0000; color:#fff; }
   <div id="time">00:00</div>
 </div>
 
-<script>
-let mode = '';
-let roundTime = 0;
-let rounds = 0;
-let currentRound = 0;
+<div id="footer">競賽計時器</div>
 
-let remain = 0;
-let running = false;
-let lastTick = 0;
+<script>
+let mode = '', roundTime = 0, rounds = 0, currentRound = 0;
+let remain = 0, running = false, lastTick = 0;
 
 const label = document.getElementById('label');
 const timeEl = document.getElementById('time');
+const toggleBtn = document.getElementById('toggleBtn');
 const body = document.body;
-
 const pad = n => n.toString().padStart(2,'0');
 
-/* ===== Beep（強制型） ===== */
 function beep(){
   const ctx = new (window.AudioContext || window.webkitAudioContext)();
   const o = ctx.createOscillator();
@@ -111,7 +186,6 @@ function beep(){
   o.stop(ctx.currentTime + 0.25);
 }
 
-/* ===== 設定模式 ===== */
 function setRound(min, cnt){
   mode = 'round';
   roundTime = min * 60;
@@ -141,12 +215,24 @@ function setTotal(min){
   update();
 }
 
-/* ===== 主循環 ===== */
-function tick(ts){
-  if(!running){
-    requestAnimationFrame(tick);
-    return;
+function nextRound(){
+  if(mode === 'round' && currentRound < rounds){
+    currentRound++;
+    remain = roundTime;
+    running = false;
+    body.className = 'normal';
+    update();
   }
+}
+
+function toggle(){
+  running = !running;
+  lastTick = 0;
+  toggleBtn.textContent = running ? 'PAUSE' : 'START';
+}
+
+function tick(ts){
+  if(!running){ requestAnimationFrame(tick); return; }
 
   if(!lastTick) lastTick = ts;
   if(ts - lastTick >= 1000){
@@ -157,6 +243,7 @@ function tick(ts){
       running = false;
       body.className = 'end';
       label.textContent = 'TIME UP';
+      toggleBtn.textContent = 'START';
       beep();
     }
     update();
@@ -164,33 +251,16 @@ function tick(ts){
   requestAnimationFrame(tick);
 }
 
-/* ===== 顯示 ===== */
 function update(){
   const m = Math.floor(remain / 60);
   const s = remain % 60;
   timeEl.textContent = `${pad(m)}:${pad(s)}`;
-
-  if(mode === 'round'){
-    label.textContent = `ROUND ${currentRound}/${rounds}`;
-  }
+  if(mode === 'round') label.textContent = `ROUND ${currentRound}/${rounds}`;
 }
 
-/* ===== 操作 ===== */
 document.addEventListener('keydown', e=>{
-  if(e.code === 'Space'){
-    running = !running;
-    lastTick = 0;
-  }
-
-  if(e.key === 'n' || e.key === 'N'){
-    if(mode === 'round' && currentRound < rounds){
-      currentRound++;
-      remain = roundTime;
-      running = false;
-      body.className = 'normal';
-      update();
-    }
-  }
+  if(e.code === 'Space') toggle();
+  if(e.key === 'n' || e.key === 'N') nextRound();
 });
 
 requestAnimationFrame(tick);
