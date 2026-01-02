@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChatGPT廢話清理器</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#1e1e1e;color:#d4d4d4;font-family:Consolas,Monaco,'Courier New',monospace;font-size:14px;padding:20px;min-height:100vh}
+h1{color:#569cd6;font-size:1.1em;margin-bottom:15px}
+h1 a{color:#569cd6;text-decoration:underline}
+label{color:#808080;font-size:.85em;display:block;margin-bottom:5px}
+textarea{width:100%;background:#2d2d2d;border:1px solid #3c3c3c;color:#d4d4d4;padding:12px;font-family:inherit;font-size:14px;resize:vertical;border-radius:0;line-height:1.5}
+textarea:focus{outline:none;border-color:#569cd6}
+#input{height:200px}
+#output{height:280px}
+.btns{margin:12px 0;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+button{background:#0e639c;color:#fff;border:none;padding:6px 14px;cursor:pointer;font-family:inherit;font-size:13px}
+button:hover{background:#1177bb}
+.section{margin-bottom:15px}
+.output-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.copy-link{color:#569cd6;text-decoration:underline;cursor:pointer;font-size:.85em}
+.copy-link:hover{color:#7cb9e8}
+.info{color:#606060;font-size:.75em;margin-top:8px}
+.tag{background:#264f78;color:#9cdcfe;padding:2px 8px;font-size:.8em;margin-left:10px}
+footer{color:#606060;font-size:.75em;text-align:center;margin-top:30px;padding-top:15px;border-top:1px solid #3c3c3c}
+</style>
+</head>
+<body>
+<h1>ChatGPT廢話清理器</h1>
+
+<div class="section">
+<label>貼上 ChatGPT 複製的文字</label>
+<textarea id="input" placeholder="在此貼上..."></textarea>
+<div class="btns">
+<button onclick="clean()">乾淨格式</button>
+<button onclick="toMarkdown()">Markdown Source</button>
+<button onclick="$('input').value='';$('output').value=''">清除</button>
+<span class="tag">自動去除 AI 廢話</span>
+</div>
+</div>
+
+<div class="section">
+<div class="output-header">
+<label>輸出結果</label>
+<span class="copy-link" onclick="copyOutput()">Copy to clipboard</span>
+</div>
+<textarea id="output" readonly></textarea>
+<div class="info">ver=2025-01-02.004</div>
+</div>
+
+<footer>ChatGPT廢話清理器</footer>
+
+<script>
+const $=id=>document.getElementById(id);
+
+const JUNK_PATTERNS=[
+  /^好[，,]?直接給你/,
+  /^這版[先就]用/,
+  /^等你用一陣子/,
+  /^如果需要調整/,
+  /^有問題再說/,
+  /^這樣[就應]該/,
+  /^希望這[個樣]?對你有幫助/,
+  /^讓我知道/,
+  /^可以直接/,
+  /^以下是/,
+  /^這是.*版本?/,
+  /^供[你您]參考/,
+  /^整理如下/,
+  /再幫你[補調修]/,
+  /幫你[補調修]刀/,
+  /有需要再問/,
+  /隨時[問找]/,
+];
+
+function isJunk(line){
+  const t=line.trim();
+  if(!t)return false;
+  return JUNK_PATTERNS.some(p=>p.test(t));
+}
+
+function removeJunk(text){
+  const lines=text.split('\n');
+  const result=[];
+  let contentStarted=false;
+  for(let i=0;i<lines.length;i++){
+    const line=lines[i];
+    const trimmed=line.trim();
+    if(!contentStarted){
+      if(isJunk(trimmed)||trimmed==='')continue;
+      contentStarted=true;
+    }
+    result.push(line);
+  }
+  while(result.length&&(isJunk(result[result.length-1].trim())||result[result.length-1].trim()==='')){
+    result.pop();
+  }
+  return result.join('\n');
+}
+
+function clean(){
+  const t=$('input').value;
+  if(!t.trim())return;
+  let cleaned=removeJunk(t);
+  cleaned=cleaned
+    .split('\n')
+    .map(l=>l.trimEnd())
+    .filter((l,i,a)=>!(l.trim()===''&&a[i-1]?.trim()===''))
+    .join('\n')
+    .replace(/^\n+|\n+$/g,'');
+  $('output').value=cleaned;
+}
+
+function toMarkdown(){
+  const t=$('input').value;
+  if(!t.trim())return;
+  let cleaned=removeJunk(t);
+  const lines=cleaned.split('\n').map(l=>l.trimEnd());
+  const result=[];
+  for(const l of lines){
+    if(/^[•●○■□▪▸►]\s*/.test(l.trim())){
+      result.push(l.replace(/^(\s*)[•●○■□▪▸►]\s*/,'$1- '));
+      continue;
+    }
+    if(/^\*\s+/.test(l.trim())&&!/^\*\*/.test(l.trim())){
+      result.push(l.replace(/^(\s*)\*\s+/,'$1- '));
+      continue;
+    }
+    result.push(l);
+  }
+  $('output').value=result
+    .filter((l,i,a)=>!(l.trim()===''&&a[i-1]?.trim()===''))
+    .join('\n')
+    .replace(/^\n+|\n+$/g,'');
+}
+
+function copyOutput(){
+  const o=$('output');
+  if(!o.value)return;
+  navigator.clipboard.writeText(o.value);
+}
+</script>
+</body>
+</html>
