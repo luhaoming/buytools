@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>租賃退租結算確認書</title>
+    <meta name="version" content="2.6.20260108">
+    <title>租賃退租結算確認書 (v2.6)</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
@@ -11,17 +12,16 @@
     
     <style>
         @media print {
-            @page { size: A4; margin: 10mm; } /* 強制 A4 邊界 */
+            @page { size: A4; margin: 10mm; }
             .no-print { display: none !important; }
             body { background: white; -webkit-print-color-adjust: exact; }
             .shadow-lg { box-shadow: none; border: 1px solid #000; }
             .print-bg-force { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             input::placeholder { color: transparent; }
             
-            /* 列印時強制字體微調 */
             .text-xl { font-size: 1.1rem; }
             .text-4xl { font-size: 2rem; }
-            .h-32 { height: 6rem; } /* 簽名欄高度縮減 */
+            .h-32 { height: 6rem; }
         }
         
         .stamp-box {
@@ -53,6 +53,7 @@
             <h1 class="font-bold text-lg tracking-wide">
                 {{ isReadOnly ? '退租結算 (房客版)' : '租賃退租結算確認書' }}
             </h1>
+            <span class="text-[10px] bg-slate-700 px-1 rounded text-gray-400">v{{ appVersion }}</span>
         </div>
         <button v-if="!isReadOnly" @click="copyLink" 
             class="text-xs px-3 py-2 rounded transition border border-slate-700 flex items-center gap-2 font-medium"
@@ -194,6 +195,9 @@
             <button @click="printPdf" class="w-full bg-slate-900 text-white font-bold py-4 rounded hover:bg-black transition flex justify-center items-center gap-2">
                 <span>🖨️ 確認簽署並列印 / 存檔 PDF</span>
             </button>
+            <div class="text-center mt-4 text-[10px] text-gray-300 font-mono">
+                System Version: {{ appVersion }}
+            </div>
         </div>
 
     </div>
@@ -202,8 +206,12 @@
 <script>
 const { createApp, ref, computed, onMounted, nextTick } = Vue;
 
+// 3. 程式版號定義 (修改這裡即可更新)
+const APP_VERSION = '2.6.20260108';
+
 createApp({
     setup() {
+        const appVersion = ref(APP_VERSION);
         const linkCopied = ref(false);
         const useDefaultSig = ref(true); 
         const isTenantPadEmpty = ref(true);
@@ -286,6 +294,8 @@ createApp({
             if (params.get('mode') === 'guest') {
                 isReadOnly.value = true;
             }
+            // 印出版號在 Console 方便 debug
+            console.log("App Version:", APP_VERSION);
 
             const hash = window.location.hash.slice(1);
             if (hash) {
@@ -301,6 +311,7 @@ createApp({
         });
 
         return {
+            appVersion,
             form, elec, elecUsage, elecTotal, finalTotal,
             addRow, removeRow, useDefaultSig, isTenantPadEmpty, clearPad,
             copyLink, linkCopied, printPdf, isReadOnly
