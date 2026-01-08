@@ -11,14 +11,19 @@
     
     <style>
         @media print {
+            @page { size: A4; margin: 10mm; } /* 強制 A4 邊界 */
             .no-print { display: none !important; }
             body { background: white; -webkit-print-color-adjust: exact; }
-            .shadow-lg { box-shadow: none; border: 1px solid #eee; }
+            .shadow-lg { box-shadow: none; border: 1px solid #000; }
             .print-bg-force { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            /* 列印時強制隱藏 placeholder */
             input::placeholder { color: transparent; }
+            
+            /* 列印時強制字體微調 */
+            .text-xl { font-size: 1.1rem; }
+            .text-4xl { font-size: 2rem; }
+            .h-32 { height: 6rem; } /* 簽名欄高度縮減 */
         }
-        /* 印章樣式 - 商務紅 */
+        
         .stamp-box {
             border: 3px solid #b91c1c;
             border-radius: 4px;
@@ -27,18 +32,17 @@
             opacity: 0.9;
             mask-image: radial-gradient(#000, rgba(0,0,0,.85));
         }
-        /* 唯讀輸入框樣式優化 */
         input:disabled {
             background-color: transparent;
-            color: #374151; /* gray-700 */
-            border-bottom: 1px dashed #d1d5db; /* 虛線表示不可改 */
+            color: #374151;
+            border-bottom: 1px dashed #9ca3af;
             cursor: not-allowed;
         }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen p-2 md:p-6 font-sans text-gray-800">
 
-<div id="app" class="max-w-2xl mx-auto bg-white shadow-lg rounded-xl overflow-hidden print-bg-force relative">
+<div id="app" class="max-w-2xl mx-auto bg-white shadow-lg rounded-xl overflow-hidden print-bg-force relative print:p-4 print:text-sm">
     
     <div v-if="isReadOnly" class="absolute top-20 right-4 border-2 border-slate-200 text-slate-300 px-4 py-2 text-4xl font-black rounded-lg transform rotate-12 pointer-events-none no-print z-0 opacity-50">
         READ ONLY
@@ -46,97 +50,94 @@
 
     <div class="bg-slate-900 p-4 text-white flex justify-between items-center no-print z-10 relative">
         <div class="flex items-center gap-2">
-            <svg class="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
             <h1 class="font-bold text-lg tracking-wide">
-                {{ isReadOnly ? '租賃退租結算 (房客確認版)' : '租賃退租結算確認書' }}
+                {{ isReadOnly ? '退租結算 (房客版)' : '租賃退租結算確認書' }}
             </h1>
         </div>
-        
         <button v-if="!isReadOnly" @click="copyLink" 
             class="text-xs px-3 py-2 rounded transition border border-slate-700 flex items-center gap-2 font-medium"
             :class="linkCopied ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-slate-800 hover:bg-slate-700 text-gray-200'">
             <span v-if="linkCopied">✓ 連結已複製</span>
             <span v-else>🔗 產生傳送連結 (唯讀)</span>
         </button>
-
         <div v-else class="text-xs bg-slate-800 px-3 py-1 rounded text-gray-400">
             請確認下方金額並簽名
         </div>
     </div>
 
-    <div class="p-8 space-y-8 relative z-0">
+    <div class="p-6 md:p-8 space-y-6 print:space-y-3 print:p-0 relative z-0">
         
-        <div class="text-center border-b-2 border-gray-800 pb-4 mb-6">
-            <h2 class="text-2xl font-black text-gray-900 tracking-widest">退租結算確認書</h2>
-            <p class="text-sm text-gray-500 mt-1">租賃契約終止與費用結清明細</p>
+        <div class="text-center border-b-2 border-gray-800 pb-2 mb-4 print:mb-2">
+            <h2 class="text-2xl font-black text-gray-900 tracking-widest print:text-xl">退租結算確認書</h2>
+            <p class="text-sm text-gray-500 mt-1 print:text-xs">租賃契約終止與費用結清明細</p>
         </div>
 
-        <div class="grid grid-cols-2 gap-8">
+        <div class="grid grid-cols-2 gap-8 print:gap-4">
             <div>
                 <label class="block text-xs font-bold text-gray-500 uppercase mb-1">承租人 (住戶)</label>
-                <input v-model="form.name" :disabled="isReadOnly" type="text" class="w-full border-b border-gray-300 focus:border-gray-800 outline-none py-2 text-xl font-bold bg-transparent placeholder-gray-300" placeholder="例如：陳大文">
+                <input v-model="form.name" :disabled="isReadOnly" type="text" class="w-full border-b border-gray-300 focus:border-gray-800 outline-none py-1 text-xl font-bold bg-transparent placeholder-gray-300 print:text-lg">
             </div>
             <div>
                 <label class="block text-xs font-bold text-gray-500 uppercase mb-1">結算日期</label>
-                <input v-model="form.date" :disabled="isReadOnly" type="date" class="w-full border-b border-gray-300 focus:border-gray-800 outline-none py-2 text-lg bg-transparent font-mono">
+                <input v-model="form.date" :disabled="isReadOnly" type="date" class="w-full border-b border-gray-300 focus:border-gray-800 outline-none py-1 text-lg bg-transparent font-mono print:text-base">
             </div>
         </div>
 
         <div>
-            <h3 class="font-bold text-gray-800 flex items-center gap-2 mb-3 text-sm uppercase tracking-wide">
+            <h3 class="font-bold text-gray-800 flex items-center gap-2 mb-2 text-sm uppercase tracking-wide">
                 <span class="w-1.5 h-1.5 bg-gray-800 rounded-full"></span>
                 應退還款項 (押金)
             </h3>
-            <div class="bg-gray-50 rounded border border-gray-200 p-4 space-y-3">
+            <div class="bg-gray-50 print:bg-transparent rounded border border-gray-200 p-3 print:p-1 space-y-2">
                 <div class="flex gap-3 items-center" v-for="(item, idx) in form.refunds" :key="'ref'+idx">
                     <input v-model="item.name" :disabled="isReadOnly" class="flex-1 bg-transparent border-b border-gray-200 focus:border-gray-500 outline-none py-1 text-sm" placeholder="項目名稱">
-                    <div class="relative w-32">
+                    <div class="relative w-28">
                         <span class="absolute left-0 top-1 text-gray-400 text-sm">$</span>
                         <input v-model.number="item.amount" :disabled="isReadOnly" type="number" class="w-full pl-4 bg-transparent border-b border-gray-200 focus:border-gray-500 outline-none py-1 text-right font-mono text-gray-800" placeholder="0">
                     </div>
                     <button v-if="!isReadOnly" @click="removeRow('refunds', idx)" class="text-gray-300 hover:text-red-500 no-print px-1">×</button>
                 </div>
-                <button v-if="!isReadOnly" @click="addRow('refunds')" class="text-xs text-emerald-700 font-bold hover:underline no-print mt-2">+ 新增項目</button>
+                <button v-if="!isReadOnly" @click="addRow('refunds')" class="text-xs text-emerald-700 font-bold hover:underline no-print mt-1">+ 新增項目</button>
             </div>
         </div>
 
         <div>
-            <h3 class="font-bold text-gray-800 flex items-center gap-2 mb-3 text-sm uppercase tracking-wide">
+            <h3 class="font-bold text-gray-800 flex items-center gap-2 mb-2 text-sm uppercase tracking-wide">
                 <span class="w-1.5 h-1.5 bg-gray-800 rounded-full"></span>
                 電費結算
             </h3>
-            <div class="border border-gray-200 rounded p-4">
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded">計費標準: ${{ elec.rate }} / 度</span>
+            <div class="border border-gray-200 rounded p-3 print:p-2">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-bold text-gray-500 bg-gray-100 print:bg-transparent px-2 py-1 rounded">計費標準: ${{ elec.rate }} / 度</span>
                 </div>
                 <div class="flex items-end gap-4 text-sm">
                     <div class="flex-1">
                         <span class="block text-[10px] text-gray-400 mb-1">期末讀數</span>
-                        <input v-model.number="elec.end" :disabled="isReadOnly" type="number" class="w-full border-b border-gray-300 py-1 font-mono font-bold text-lg">
+                        <input v-model.number="elec.end" :disabled="isReadOnly" type="number" class="w-full border-b border-gray-300 py-1 font-mono font-bold text-lg print:text-base">
                     </div>
                     <div class="pb-2 text-gray-400">-</div>
                     <div class="flex-1">
                         <span class="block text-[10px] text-gray-400 mb-1">期初讀數</span>
-                        <input v-model.number="elec.start" :disabled="isReadOnly" type="number" class="w-full border-b border-gray-300 py-1 font-mono text-gray-500">
+                        <input v-model.number="elec.start" :disabled="isReadOnly" type="number" class="w-full border-b border-gray-300 py-1 font-mono text-gray-500 print:text-base">
                     </div>
                     <div class="pb-2 text-gray-400">=</div>
                     <div class="text-right">
                         <span class="block text-[10px] text-gray-400 mb-1">應扣金額</span>
-                        <div class="font-bold text-red-700 font-mono text-lg">-${{ elecTotal }}</div>
+                        <div class="font-bold text-red-700 font-mono text-lg print:text-base">-${{ elecTotal }}</div>
                     </div>
                 </div>
             </div>
         </div>
 
         <div>
-            <h3 class="font-bold text-gray-800 flex items-center gap-2 mb-3 text-sm uppercase tracking-wide">
+            <h3 class="font-bold text-gray-800 flex items-center gap-2 mb-2 text-sm uppercase tracking-wide">
                 <span class="w-1.5 h-1.5 bg-gray-800 rounded-full"></span>
                 其他代扣費用
             </h3>
-            <div class="pl-2 space-y-3">
+            <div class="pl-2 space-y-2">
                 <div class="flex gap-3 items-center" v-for="(item, idx) in form.charges" :key="'chg'+idx">
                     <input v-model="item.name" :disabled="isReadOnly" class="flex-1 border-b border-gray-200 focus:border-red-500 outline-none py-1 text-sm" placeholder="費用說明">
-                    <div class="relative w-32">
+                    <div class="relative w-28">
                         <span class="absolute left-0 top-1 text-gray-400 text-xs">-</span>
                         <span class="absolute left-2 top-1 text-gray-400 text-sm">$</span>
                         <input v-model.number="item.amount" :disabled="isReadOnly" type="number" class="w-full pl-5 border-b border-gray-200 focus:border-red-500 outline-none py-1 text-right font-mono text-red-700" placeholder="0">
@@ -147,7 +148,7 @@
             </div>
         </div>
 
-        <div class="border-t-2 border-gray-800 pt-6 mt-6">
+        <div class="border-t-2 border-gray-800 pt-4 mt-4 print:pt-2 print:mt-2">
             <div class="flex justify-between items-end">
                 <div class="text-sm font-bold text-gray-600">應退還金額總計</div>
                 <div class="text-4xl font-black tracking-tighter" :class="finalTotal >= 0 ? 'text-gray-900' : 'text-red-600'">
@@ -157,42 +158,39 @@
             <div class="text-right text-[10px] text-gray-400 mt-1">* 若為負數，則承租人需補繳差額</div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-10 mt-8 break-inside-avoid">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 print:gap-4 mt-6 break-inside-avoid page-break-inside-avoid">
             
             <div>
-                <div class="flex justify-between items-end mb-2 border-b border-gray-200 pb-1">
+                <div class="flex justify-between items-end mb-1 border-b border-gray-200 pb-1">
                     <p class="text-xs font-bold text-gray-500">出租人 (管理方) 簽章</p>
                     <label v-if="!isReadOnly" class="text-[10px] text-slate-600 flex items-center gap-1 cursor-pointer hover:text-slate-900 no-print select-none">
-                        <input type="checkbox" v-model="useDefaultSig"> 
-                        使用電子印鑑
+                        <input type="checkbox" v-model="useDefaultSig"> 電子印鑑
                     </label>
                 </div>
-                
-                <div class="relative h-32 flex flex-col justify-center items-center">
-                    <div v-if="useDefaultSig" class="stamp-box p-4 border-4 text-center select-none print-bg-force">
-                        <div class="text-xl font-black leading-none tracking-widest" style="font-family: '标楷体', 'KaiTi', serif;">陸浩銘印</div>
+                <div class="relative h-32 print:h-24 flex flex-col justify-center items-center">
+                    <div v-if="useDefaultSig" class="stamp-box p-3 border-4 text-center select-none print-bg-force">
+                        <div class="text-lg font-black leading-none tracking-widest" style="font-family: '标楷体', 'KaiTi', serif;">陸浩銘印</div>
                     </div>
-
                     <canvas v-show="!useDefaultSig" id="sig-agent" class="w-full h-full touch-none absolute top-0 left-0 border border-dashed border-gray-300 bg-gray-50 rounded"></canvas>
                     <button v-if="!isReadOnly && !useDefaultSig" @click="clearPad('agent')" class="absolute bottom-1 right-2 text-[10px] text-gray-400 underline no-print z-10">清除</button>
                 </div>
             </div>
 
             <div>
-                <div class="flex justify-between items-end mb-2 border-b border-gray-200 pb-1">
+                <div class="flex justify-between items-end mb-1 border-b border-gray-200 pb-1">
                     <p class="text-xs font-bold text-gray-500">承租人 確認簽章</p>
                 </div>
-                <div class="relative h-32">
+                <div class="relative h-32 print:h-24">
                     <canvas id="sig-tenant" class="w-full h-full touch-none border border-dashed border-gray-300 bg-white rounded"></canvas>
                     <button @click="clearPad('tenant')" class="absolute bottom-1 right-2 text-[10px] text-gray-400 underline no-print">重簽</button>
                     <div v-if="isTenantPadEmpty" class="absolute inset-0 flex items-center justify-center pointer-events-none text-gray-200 text-sm">
-                        (請在此簽名確認)
+                        (簽名處)
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="mt-10 no-print border-t pt-6">
+        <div class="mt-6 no-print border-t pt-4">
             <button @click="printPdf" class="w-full bg-slate-900 text-white font-bold py-4 rounded hover:bg-black transition flex justify-center items-center gap-2">
                 <span>🖨️ 確認簽署並列印 / 存檔 PDF</span>
             </button>
@@ -209,7 +207,7 @@ createApp({
         const linkCopied = ref(false);
         const useDefaultSig = ref(true); 
         const isTenantPadEmpty = ref(true);
-        const isReadOnly = ref(false); // 新增：鎖定狀態
+        const isReadOnly = ref(false);
 
         const form = ref({
             name: '',
@@ -251,7 +249,6 @@ createApp({
 
         const copyLink = () => {
             const hash = generateStateString();
-            // 關鍵修改：產生連結時強制加入 ?mode=guest
             const url = `${window.location.origin}${window.location.pathname}?mode=guest#${hash}`;
             
             if (navigator.clipboard) {
@@ -285,13 +282,11 @@ createApp({
         const printPdf = () => window.print();
 
         onMounted(async () => {
-            // 1. 檢查是否為訪客模式
             const params = new URLSearchParams(window.location.search);
             if (params.get('mode') === 'guest') {
                 isReadOnly.value = true;
             }
 
-            // 2. 讀取資料
             const hash = window.location.hash.slice(1);
             if (hash) {
                 try {
@@ -301,9 +296,6 @@ createApp({
                 } catch (e) {}
             }
             await nextTick();
-            
-            // 房東簽名板初始化 (只有非唯讀 或 沒用電子章時才需要init)
-            // 簡單起見都init，顯示邏輯交給CSS/v-show
             initPad('sig-agent', 'agent');
             initPad('sig-tenant', 'tenant');
         });
