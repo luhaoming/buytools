@@ -15,36 +15,56 @@
             body { background: white; -webkit-print-color-adjust: exact; }
             .shadow-lg { box-shadow: none; border: 1px solid #eee; }
             .print-bg-force { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            /* 列印時強制隱藏 placeholder */
+            input::placeholder { color: transparent; }
         }
         /* 印章樣式 - 商務紅 */
         .stamp-box {
-            border: 3px solid #b91c1c; /* red-700 */
+            border: 3px solid #b91c1c;
             border-radius: 4px;
             color: #b91c1c;
             transform: rotate(-3deg);
             opacity: 0.9;
             mask-image: radial-gradient(#000, rgba(0,0,0,.85));
         }
+        /* 唯讀輸入框樣式優化 */
+        input:disabled {
+            background-color: transparent;
+            color: #374151; /* gray-700 */
+            border-bottom: 1px dashed #d1d5db; /* 虛線表示不可改 */
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen p-2 md:p-6 font-sans text-gray-800">
 
-<div id="app" class="max-w-2xl mx-auto bg-white shadow-lg rounded-xl overflow-hidden print-bg-force">
+<div id="app" class="max-w-2xl mx-auto bg-white shadow-lg rounded-xl overflow-hidden print-bg-force relative">
     
-    <div class="bg-slate-900 p-4 text-white flex justify-between items-center no-print">
+    <div v-if="isReadOnly" class="absolute top-20 right-4 border-2 border-slate-200 text-slate-300 px-4 py-2 text-4xl font-black rounded-lg transform rotate-12 pointer-events-none no-print z-0 opacity-50">
+        READ ONLY
+    </div>
+
+    <div class="bg-slate-900 p-4 text-white flex justify-between items-center no-print z-10 relative">
         <div class="flex items-center gap-2">
             <svg class="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-            <h1 class="font-bold text-lg tracking-wide">租賃退租結算確認書</h1>
+            <h1 class="font-bold text-lg tracking-wide">
+                {{ isReadOnly ? '租賃退租結算 (房客確認版)' : '租賃退租結算確認書' }}
+            </h1>
         </div>
-        <button @click="copyLink" 
+        
+        <button v-if="!isReadOnly" @click="copyLink" 
             class="text-xs px-3 py-2 rounded transition border border-slate-700 flex items-center gap-2 font-medium"
             :class="linkCopied ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-slate-800 hover:bg-slate-700 text-gray-200'">
             <span v-if="linkCopied">✓ 連結已複製</span>
-            <span v-else>🔗 產生傳送連結</span>
+            <span v-else>🔗 產生傳送連結 (唯讀)</span>
         </button>
+
+        <div v-else class="text-xs bg-slate-800 px-3 py-1 rounded text-gray-400">
+            請確認下方金額並簽名
+        </div>
     </div>
 
-    <div class="p-8 space-y-8">
+    <div class="p-8 space-y-8 relative z-0">
         
         <div class="text-center border-b-2 border-gray-800 pb-4 mb-6">
             <h2 class="text-2xl font-black text-gray-900 tracking-widest">退租結算確認書</h2>
@@ -54,11 +74,11 @@
         <div class="grid grid-cols-2 gap-8">
             <div>
                 <label class="block text-xs font-bold text-gray-500 uppercase mb-1">承租人 (住戶)</label>
-                <input v-model="form.name" type="text" class="w-full border-b border-gray-300 focus:border-gray-800 outline-none py-2 text-xl font-bold bg-transparent placeholder-gray-300" placeholder="例如：陳大文">
+                <input v-model="form.name" :disabled="isReadOnly" type="text" class="w-full border-b border-gray-300 focus:border-gray-800 outline-none py-2 text-xl font-bold bg-transparent placeholder-gray-300" placeholder="例如：陳大文">
             </div>
             <div>
                 <label class="block text-xs font-bold text-gray-500 uppercase mb-1">結算日期</label>
-                <input v-model="form.date" type="date" class="w-full border-b border-gray-300 focus:border-gray-800 outline-none py-2 text-lg bg-transparent font-mono">
+                <input v-model="form.date" :disabled="isReadOnly" type="date" class="w-full border-b border-gray-300 focus:border-gray-800 outline-none py-2 text-lg bg-transparent font-mono">
             </div>
         </div>
 
@@ -69,14 +89,14 @@
             </h3>
             <div class="bg-gray-50 rounded border border-gray-200 p-4 space-y-3">
                 <div class="flex gap-3 items-center" v-for="(item, idx) in form.refunds" :key="'ref'+idx">
-                    <input v-model="item.name" class="flex-1 bg-transparent border-b border-gray-200 focus:border-gray-500 outline-none py-1 text-sm" placeholder="項目名稱">
+                    <input v-model="item.name" :disabled="isReadOnly" class="flex-1 bg-transparent border-b border-gray-200 focus:border-gray-500 outline-none py-1 text-sm" placeholder="項目名稱">
                     <div class="relative w-32">
                         <span class="absolute left-0 top-1 text-gray-400 text-sm">$</span>
-                        <input v-model.number="item.amount" type="number" class="w-full pl-4 bg-transparent border-b border-gray-200 focus:border-gray-500 outline-none py-1 text-right font-mono text-gray-800" placeholder="0">
+                        <input v-model.number="item.amount" :disabled="isReadOnly" type="number" class="w-full pl-4 bg-transparent border-b border-gray-200 focus:border-gray-500 outline-none py-1 text-right font-mono text-gray-800" placeholder="0">
                     </div>
-                    <button @click="removeRow('refunds', idx)" class="text-gray-300 hover:text-red-500 no-print px-1">×</button>
+                    <button v-if="!isReadOnly" @click="removeRow('refunds', idx)" class="text-gray-300 hover:text-red-500 no-print px-1">×</button>
                 </div>
-                <button @click="addRow('refunds')" class="text-xs text-emerald-700 font-bold hover:underline no-print mt-2">+ 新增項目</button>
+                <button v-if="!isReadOnly" @click="addRow('refunds')" class="text-xs text-emerald-700 font-bold hover:underline no-print mt-2">+ 新增項目</button>
             </div>
         </div>
 
@@ -92,12 +112,12 @@
                 <div class="flex items-end gap-4 text-sm">
                     <div class="flex-1">
                         <span class="block text-[10px] text-gray-400 mb-1">期末讀數</span>
-                        <input v-model.number="elec.end" type="number" class="w-full border-b border-gray-300 py-1 font-mono font-bold text-lg">
+                        <input v-model.number="elec.end" :disabled="isReadOnly" type="number" class="w-full border-b border-gray-300 py-1 font-mono font-bold text-lg">
                     </div>
                     <div class="pb-2 text-gray-400">-</div>
                     <div class="flex-1">
                         <span class="block text-[10px] text-gray-400 mb-1">期初讀數</span>
-                        <input v-model.number="elec.start" type="number" class="w-full border-b border-gray-300 py-1 font-mono text-gray-500">
+                        <input v-model.number="elec.start" :disabled="isReadOnly" type="number" class="w-full border-b border-gray-300 py-1 font-mono text-gray-500">
                     </div>
                     <div class="pb-2 text-gray-400">=</div>
                     <div class="text-right">
@@ -115,15 +135,15 @@
             </h3>
             <div class="pl-2 space-y-3">
                 <div class="flex gap-3 items-center" v-for="(item, idx) in form.charges" :key="'chg'+idx">
-                    <input v-model="item.name" class="flex-1 border-b border-gray-200 focus:border-red-500 outline-none py-1 text-sm" placeholder="費用說明">
+                    <input v-model="item.name" :disabled="isReadOnly" class="flex-1 border-b border-gray-200 focus:border-red-500 outline-none py-1 text-sm" placeholder="費用說明">
                     <div class="relative w-32">
                         <span class="absolute left-0 top-1 text-gray-400 text-xs">-</span>
                         <span class="absolute left-2 top-1 text-gray-400 text-sm">$</span>
-                        <input v-model.number="item.amount" type="number" class="w-full pl-5 border-b border-gray-200 focus:border-red-500 outline-none py-1 text-right font-mono text-red-700" placeholder="0">
+                        <input v-model.number="item.amount" :disabled="isReadOnly" type="number" class="w-full pl-5 border-b border-gray-200 focus:border-red-500 outline-none py-1 text-right font-mono text-red-700" placeholder="0">
                     </div>
-                    <button @click="removeRow('charges', idx)" class="text-gray-300 hover:text-red-500 no-print px-1">×</button>
+                    <button v-if="!isReadOnly" @click="removeRow('charges', idx)" class="text-gray-300 hover:text-red-500 no-print px-1">×</button>
                 </div>
-                <button @click="addRow('charges')" class="text-xs text-red-700 font-bold hover:underline no-print ml-1">+ 新增扣款</button>
+                <button v-if="!isReadOnly" @click="addRow('charges')" class="text-xs text-red-700 font-bold hover:underline no-print ml-1">+ 新增扣款</button>
             </div>
         </div>
 
@@ -142,7 +162,7 @@
             <div>
                 <div class="flex justify-between items-end mb-2 border-b border-gray-200 pb-1">
                     <p class="text-xs font-bold text-gray-500">出租人 (管理方) 簽章</p>
-                    <label class="text-[10px] text-slate-600 flex items-center gap-1 cursor-pointer hover:text-slate-900 no-print select-none">
+                    <label v-if="!isReadOnly" class="text-[10px] text-slate-600 flex items-center gap-1 cursor-pointer hover:text-slate-900 no-print select-none">
                         <input type="checkbox" v-model="useDefaultSig"> 
                         使用電子印鑑
                     </label>
@@ -154,7 +174,7 @@
                     </div>
 
                     <canvas v-show="!useDefaultSig" id="sig-agent" class="w-full h-full touch-none absolute top-0 left-0 border border-dashed border-gray-300 bg-gray-50 rounded"></canvas>
-                    <button v-show="!useDefaultSig" @click="clearPad('agent')" class="absolute bottom-1 right-2 text-[10px] text-gray-400 underline no-print z-10">清除</button>
+                    <button v-if="!isReadOnly && !useDefaultSig" @click="clearPad('agent')" class="absolute bottom-1 right-2 text-[10px] text-gray-400 underline no-print z-10">清除</button>
                 </div>
             </div>
 
@@ -189,6 +209,7 @@ createApp({
         const linkCopied = ref(false);
         const useDefaultSig = ref(true); 
         const isTenantPadEmpty = ref(true);
+        const isReadOnly = ref(false); // 新增：鎖定狀態
 
         const form = ref({
             name: '',
@@ -230,7 +251,8 @@ createApp({
 
         const copyLink = () => {
             const hash = generateStateString();
-            const url = `${window.location.origin}${window.location.pathname}#${hash}`;
+            // 關鍵修改：產生連結時強制加入 ?mode=guest
+            const url = `${window.location.origin}${window.location.pathname}?mode=guest#${hash}`;
             
             if (navigator.clipboard) {
                 navigator.clipboard.writeText(url).then(() => {
@@ -263,6 +285,13 @@ createApp({
         const printPdf = () => window.print();
 
         onMounted(async () => {
+            // 1. 檢查是否為訪客模式
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('mode') === 'guest') {
+                isReadOnly.value = true;
+            }
+
+            // 2. 讀取資料
             const hash = window.location.hash.slice(1);
             if (hash) {
                 try {
@@ -272,6 +301,9 @@ createApp({
                 } catch (e) {}
             }
             await nextTick();
+            
+            // 房東簽名板初始化 (只有非唯讀 或 沒用電子章時才需要init)
+            // 簡單起見都init，顯示邏輯交給CSS/v-show
             initPad('sig-agent', 'agent');
             initPad('sig-tenant', 'tenant');
         });
@@ -279,7 +311,7 @@ createApp({
         return {
             form, elec, elecUsage, elecTotal, finalTotal,
             addRow, removeRow, useDefaultSig, isTenantPadEmpty, clearPad,
-            copyLink, linkCopied, printPdf
+            copyLink, linkCopied, printPdf, isReadOnly
         };
     }
 }).mount('#app');
