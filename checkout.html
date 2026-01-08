@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>租賃退租結算確認書</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
+    
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; -webkit-print-color-adjust: exact; }
+            .shadow-lg { box-shadow: none; border: 1px solid #eee; }
+            .print-bg-force { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+        /* 印章樣式 - 商務紅 */
+        .stamp-box {
+            border: 3px solid #b91c1c; /* red-700 */
+            border-radius: 4px;
+            color: #b91c1c;
+            transform: rotate(-3deg);
+            opacity: 0.9;
+            mask-image: radial-gradient(#000, rgba(0,0,0,.85));
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-2 md:p-6 font-sans text-gray-800">
+
+<div id="app" class="max-w-2xl mx-auto bg-white shadow-lg rounded-xl overflow-hidden print-bg-force">
+    
+    <div class="bg-slate-900 p-4 text-white flex justify-between items-center no-print">
+        <div class="flex items-center gap-2">
+            <svg class="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            <h1 class="font-bold text-lg tracking-wide">租賃退租結算確認書</h1>
+        </div>
+        <button @click="copyLink" 
+            class="text-xs px-3 py-2 rounded transition border border-slate-700 flex items-center gap-2 font-medium"
+            :class="linkCopied ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-slate-800 hover:bg-slate-700 text-gray-200'">
+            <span v-if="linkCopied">✓ 連結已複製</span>
+            <span v-else>🔗 產生傳送連結</span>
+        </button>
+    </div>
+
+    <div class="p-8 space-y-8">
+        
+        <div class="text-center border-b-2 border-gray-800 pb-4 mb-6">
+            <h2 class="text-2xl font-black text-gray-900 tracking-widest">退租結算確認書</h2>
+            <p class="text-sm text-gray-500 mt-1">租賃契約終止與費用結清明細</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-8">
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">承租人 (住戶)</label>
+                <input v-model="form.name" type="text" class="w-full border-b border-gray-300 focus:border-gray-800 outline-none py-2 text-xl font-bold bg-transparent placeholder-gray-300" placeholder="例如：陳大文">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">結算日期</label>
+                <input v-model="form.date" type="date" class="w-full border-b border-gray-300 focus:border-gray-800 outline-none py-2 text-lg bg-transparent font-mono">
+            </div>
+        </div>
+
+        <div>
+            <h3 class="font-bold text-gray-800 flex items-center gap-2 mb-3 text-sm uppercase tracking-wide">
+                <span class="w-1.5 h-1.5 bg-gray-800 rounded-full"></span>
+                應退還款項 (押金)
+            </h3>
+            <div class="bg-gray-50 rounded border border-gray-200 p-4 space-y-3">
+                <div class="flex gap-3 items-center" v-for="(item, idx) in form.refunds" :key="'ref'+idx">
+                    <input v-model="item.name" class="flex-1 bg-transparent border-b border-gray-200 focus:border-gray-500 outline-none py-1 text-sm" placeholder="項目名稱">
+                    <div class="relative w-32">
+                        <span class="absolute left-0 top-1 text-gray-400 text-sm">$</span>
+                        <input v-model.number="item.amount" type="number" class="w-full pl-4 bg-transparent border-b border-gray-200 focus:border-gray-500 outline-none py-1 text-right font-mono text-gray-800" placeholder="0">
+                    </div>
+                    <button @click="removeRow('refunds', idx)" class="text-gray-300 hover:text-red-500 no-print px-1">×</button>
+                </div>
+                <button @click="addRow('refunds')" class="text-xs text-emerald-700 font-bold hover:underline no-print mt-2">+ 新增項目</button>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="font-bold text-gray-800 flex items-center gap-2 mb-3 text-sm uppercase tracking-wide">
+                <span class="w-1.5 h-1.5 bg-gray-800 rounded-full"></span>
+                電費結算
+            </h3>
+            <div class="border border-gray-200 rounded p-4">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded">計費標準: ${{ elec.rate }} / 度</span>
+                </div>
+                <div class="flex items-end gap-4 text-sm">
+                    <div class="flex-1">
+                        <span class="block text-[10px] text-gray-400 mb-1">期末讀數</span>
+                        <input v-model.number="elec.end" type="number" class="w-full border-b border-gray-300 py-1 font-mono font-bold text-lg">
+                    </div>
+                    <div class="pb-2 text-gray-400">-</div>
+                    <div class="flex-1">
+                        <span class="block text-[10px] text-gray-400 mb-1">期初讀數</span>
+                        <input v-model.number="elec.start" type="number" class="w-full border-b border-gray-300 py-1 font-mono text-gray-500">
+                    </div>
+                    <div class="pb-2 text-gray-400">=</div>
+                    <div class="text-right">
+                        <span class="block text-[10px] text-gray-400 mb-1">應扣金額</span>
+                        <div class="font-bold text-red-700 font-mono text-lg">-${{ elecTotal }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="font-bold text-gray-800 flex items-center gap-2 mb-3 text-sm uppercase tracking-wide">
+                <span class="w-1.5 h-1.5 bg-gray-800 rounded-full"></span>
+                其他代扣費用
+            </h3>
+            <div class="pl-2 space-y-3">
+                <div class="flex gap-3 items-center" v-for="(item, idx) in form.charges" :key="'chg'+idx">
+                    <input v-model="item.name" class="flex-1 border-b border-gray-200 focus:border-red-500 outline-none py-1 text-sm" placeholder="費用說明">
+                    <div class="relative w-32">
+                        <span class="absolute left-0 top-1 text-gray-400 text-xs">-</span>
+                        <span class="absolute left-2 top-1 text-gray-400 text-sm">$</span>
+                        <input v-model.number="item.amount" type="number" class="w-full pl-5 border-b border-gray-200 focus:border-red-500 outline-none py-1 text-right font-mono text-red-700" placeholder="0">
+                    </div>
+                    <button @click="removeRow('charges', idx)" class="text-gray-300 hover:text-red-500 no-print px-1">×</button>
+                </div>
+                <button @click="addRow('charges')" class="text-xs text-red-700 font-bold hover:underline no-print ml-1">+ 新增扣款</button>
+            </div>
+        </div>
+
+        <div class="border-t-2 border-gray-800 pt-6 mt-6">
+            <div class="flex justify-between items-end">
+                <div class="text-sm font-bold text-gray-600">應退還金額總計</div>
+                <div class="text-4xl font-black tracking-tighter" :class="finalTotal >= 0 ? 'text-gray-900' : 'text-red-600'">
+                    <span class="text-2xl align-top mr-1">$</span>{{ finalTotal }}
+                </div>
+            </div>
+            <div class="text-right text-[10px] text-gray-400 mt-1">* 若為負數，則承租人需補繳差額</div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-10 mt-8 break-inside-avoid">
+            
+            <div>
+                <div class="flex justify-between items-end mb-2 border-b border-gray-200 pb-1">
+                    <p class="text-xs font-bold text-gray-500">出租人 (管理方) 簽章</p>
+                    <label class="text-[10px] text-slate-600 flex items-center gap-1 cursor-pointer hover:text-slate-900 no-print select-none">
+                        <input type="checkbox" v-model="useDefaultSig"> 
+                        使用電子印鑑
+                    </label>
+                </div>
+                
+                <div class="relative h-32 flex flex-col justify-center items-center">
+                    <div v-if="useDefaultSig" class="stamp-box p-4 border-4 text-center select-none print-bg-force">
+                        <div class="text-xl font-black leading-none tracking-widest" style="font-family: '标楷体', 'KaiTi', serif;">陸浩銘印</div>
+                    </div>
+
+                    <canvas v-show="!useDefaultSig" id="sig-agent" class="w-full h-full touch-none absolute top-0 left-0 border border-dashed border-gray-300 bg-gray-50 rounded"></canvas>
+                    <button v-show="!useDefaultSig" @click="clearPad('agent')" class="absolute bottom-1 right-2 text-[10px] text-gray-400 underline no-print z-10">清除</button>
+                </div>
+            </div>
+
+            <div>
+                <div class="flex justify-between items-end mb-2 border-b border-gray-200 pb-1">
+                    <p class="text-xs font-bold text-gray-500">承租人 確認簽章</p>
+                </div>
+                <div class="relative h-32">
+                    <canvas id="sig-tenant" class="w-full h-full touch-none border border-dashed border-gray-300 bg-white rounded"></canvas>
+                    <button @click="clearPad('tenant')" class="absolute bottom-1 right-2 text-[10px] text-gray-400 underline no-print">重簽</button>
+                    <div v-if="isTenantPadEmpty" class="absolute inset-0 flex items-center justify-center pointer-events-none text-gray-200 text-sm">
+                        (請在此簽名確認)
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-10 no-print border-t pt-6">
+            <button @click="printPdf" class="w-full bg-slate-900 text-white font-bold py-4 rounded hover:bg-black transition flex justify-center items-center gap-2">
+                <span>🖨️ 確認簽署並列印 / 存檔 PDF</span>
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<script>
+const { createApp, ref, computed, onMounted, nextTick } = Vue;
+
+createApp({
+    setup() {
+        const linkCopied = ref(false);
+        const useDefaultSig = ref(true); 
+        const isTenantPadEmpty = ref(true);
+
+        const form = ref({
+            name: '',
+            date: new Date().toISOString().split('T')[0],
+            refunds: [
+                { name: '房租押金', amount: 15600 },
+                { name: '鑰匙押金', amount: 100 }
+            ],
+            charges: [
+                { name: '前期水費', amount: 200 },
+                { name: '未出帳水費', amount: 200 }
+            ]
+        });
+
+        const elec = ref({
+            start: 25580,
+            end: 25659,
+            rate: 5
+        });
+
+        let pads = {};
+
+        const elecUsage = computed(() => Math.max(0, elec.value.end - elec.value.start));
+        const elecTotal = computed(() => Math.round(elecUsage.value * elec.value.rate));
+        
+        const finalTotal = computed(() => {
+            const r = form.value.refunds.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+            const c = form.value.charges.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+            return r - c - elecTotal.value;
+        });
+
+        const addRow = (type) => form.value[type].push({ name: '', amount: '' });
+        const removeRow = (type, idx) => form.value[type].splice(idx, 1);
+
+        const generateStateString = () => {
+            const data = { f: form.value, e: elec.value };
+            return LZString.compressToEncodedURIComponent(JSON.stringify(data));
+        };
+
+        const copyLink = () => {
+            const hash = generateStateString();
+            const url = `${window.location.origin}${window.location.pathname}#${hash}`;
+            
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(url).then(() => {
+                    linkCopied.value = true;
+                    setTimeout(() => linkCopied.value = false, 2000);
+                });
+            } else prompt("請複製網址：", url);
+        };
+
+        const initPad = (id, key) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            el.width = el.offsetWidth * ratio;
+            el.height = el.offsetHeight * ratio;
+            el.getContext("2d").scale(ratio, ratio);
+            
+            const pad = new SignaturePad(el, { penColor: 'rgb(0, 0, 0)' });
+            pads[key] = pad;
+            if (key === 'tenant') pad.addEventListener("beginStroke", () => isTenantPadEmpty.value = false);
+        };
+
+        const clearPad = (key) => {
+            if (pads[key]) {
+                pads[key].clear();
+                if (key === 'tenant') isTenantPadEmpty.value = true;
+            }
+        };
+
+        const printPdf = () => window.print();
+
+        onMounted(async () => {
+            const hash = window.location.hash.slice(1);
+            if (hash) {
+                try {
+                    const json = LZString.decompressFromEncodedURIComponent(hash);
+                    const data = JSON.parse(json);
+                    if (data) { form.value = data.f; elec.value = data.e; }
+                } catch (e) {}
+            }
+            await nextTick();
+            initPad('sig-agent', 'agent');
+            initPad('sig-tenant', 'tenant');
+        });
+
+        return {
+            form, elec, elecUsage, elecTotal, finalTotal,
+            addRow, removeRow, useDefaultSig, isTenantPadEmpty, clearPad,
+            copyLink, linkCopied, printPdf
+        };
+    }
+}).mount('#app');
+</script>
+</body>
+</html>
