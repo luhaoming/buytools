@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CSV Column Sorter</title>
+<link href="https://unpkg.com/tabulator-tables@5.5.2/dist/css/tabulator.min.css" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Hiragino Kaku Gothic ProN","Meiryo",system-ui,sans-serif;background:#fafafa;color:#333;min-height:100vh;padding:0}
+.header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);padding:20px;text-align:center;box-shadow:0 2px 10px rgba(102,126,234,0.3)}
+.header h1{color:#fff;font-size:1.6em;font-weight:500;letter-spacing:2px;margin-bottom:5px}
+.header p{color:rgba(255,255,255,0.9);font-size:13px}
+.main{max-width:1600px;margin:0 auto;padding:20px}
+.panels-container{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+.panel{background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.08);overflow:hidden;display:flex;flex-direction:column}
+.panel-header{background:#2c3e50;color:#fff;padding:12px 15px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
+.panel-header::before{content:"";display:inline-block;width:4px;height:16px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:2px}
+.panel-body{flex:1;padding:15px;display:flex;flex-direction:column;min-height:400px}
+.input-textarea{width:100%;flex:1;padding:12px;border:1px solid #e0e0e0;border-radius:6px;font-family:"SF Mono","Monaco","Inconsolata",monospace;font-size:12px;line-height:1.5;resize:none;background:#1e1e1e;color:#d4d4d4;min-height:350px}
+.input-textarea:focus{outline:none;border-color:#667eea;box-shadow:0 0 0 3px rgba(102,126,234,0.1)}
+.panel-buttons{display:flex;gap:10px;padding-top:10px;border-top:1px solid #eee}
+.btn{padding:8px 20px;border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;box-shadow:0 2px 8px rgba(102,126,234,0.3)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(102,126,234,0.4)}
+.btn-secondary{background:#fff;color:#666;border:1px solid #ddd}
+.btn-secondary:hover{background:#f5f5f5;border-color:#ccc}
+.btn-danger{background:#dc3545;color:#fff}
+.btn-danger:hover{background:#c82333}
+.tool-options{background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.08);padding:20px;margin-bottom:20px}
+.options-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px}
+.option-group{border:1px solid #eee;border-radius:6px;padding:15px;background:#fafafa}
+.option-group h3{font-size:13px;font-weight:600;color:#555;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #667eea}
+.form-group{margin-bottom:12px}
+.form-group label{display:block;font-size:12px;color:#666;margin-bottom:6px;font-weight:500}
+.form-group input[type="text"],.form-group input[type="number"],.form-group select{width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:4px;font-size:12px}
+.form-group input[type="checkbox"]{margin-right:6px}
+.checkbox-group{display:flex;align-items:center;gap:8px}
+.info-text{font-size:11px;color:#999;margin-top:4px}
+.error-message{background:#ffeef0;color:#cb2431;padding:12px;border-radius:6px;margin-bottom:15px;font-size:12px;border-left:4px solid #cb2431}
+.success-message{background:#e6ffec;color:#22863a;padding:12px;border-radius:6px;margin-bottom:15px;font-size:12px;border-left:4px solid #22863a}
+.output-panel{min-height:400px}
+#outputTable{height:400px}
+.hidden{display:none}
+.file-input-wrapper{position:relative;display:inline-block}
+.file-input-wrapper input[type="file"]{position:absolute;opacity:0;width:0;height:0}
+.column-selector{background:#f8f9fa;border:1px solid #e0e0e0;border-radius:6px;margin-bottom:15px;overflow:hidden}
+.column-selector-header{background:#fff;padding:10px 15px;border-bottom:1px solid #e0e0e0;display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-size:12px;font-weight:600;color:#555}
+.column-selector-header:hover{background:#f5f5f5}
+.btn-toggle-columns{background:none;border:none;cursor:pointer;font-size:12px;color:#666;padding:0;width:20px}
+.column-selector-body{padding:12px 15px;max-height:200px;overflow-y:auto}
+.column-selector-actions{display:flex;gap:8px;margin-bottom:10px}
+.btn-sm{padding:6px 12px;font-size:11px}
+.column-checkboxes{display:flex;flex-wrap:wrap;gap:12px 20px}
+.column-checkbox-item{display:flex;align-items:center;gap:6px;font-size:12px}
+.column-checkbox-item input[type="checkbox"]{margin:0;cursor:pointer}
+.column-checkbox-item label{margin:0;cursor:pointer;user-select:none}
+.column-selector.collapsed .column-selector-body{display:none}
+.column-selector.collapsed .btn-toggle-columns::before{content:"▶"}
+.column-selector:not(.collapsed) .btn-toggle-columns::before{content:"▼"}
+.footer{text-align:center;padding:20px;color:#aaa;font-size:11px}
+@media(max-width:1200px){.panels-container{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="header">
+<h1>CSV Column Sorter</h1>
+<p>全球最簡潔的 CSV 工具 - 排序、篩選、清理一次完成</p>
+</div>
+<div class="main">
+<div class="panels-container">
+<div class="panel">
+<div class="panel-header">Input CSV</div>
+<div class="panel-body">
+<textarea id="inputCSV" class="input-textarea" placeholder="貼上 CSV 資料或使用下方按鈕匯入檔案..."></textarea>
+<div class="panel-buttons">
+<div class="file-input-wrapper">
+<input type="file" id="fileInput" accept=".csv,.txt">
+<button class="btn btn-secondary" onclick="document.getElementById('fileInput').click()">📁 Import from file</button>
+</div>
+<button class="btn btn-secondary" onclick="clearInput()">✕ Clear</button>
+<button class="btn btn-secondary" onclick="copyInput()">📋 Copy to clipboard</button>
+</div>
+</div>
+</div>
+<div class="panel">
+<div class="panel-header">Sorted CSV</div>
+<div class="panel-body output-panel">
+<div id="errorMessage" class="error-message hidden"></div>
+<div id="successMessage" class="success-message hidden"></div>
+<div id="columnSelector" class="column-selector hidden">
+<div class="column-selector-header">
+<span>選擇要顯示的欄位</span>
+<button class="btn-toggle-columns" onclick="toggleColumnSelector()">▼</button>
+</div>
+<div class="column-selector-body">
+<div class="column-selector-actions">
+<button class="btn btn-secondary btn-sm" onclick="selectAllColumns()">全選</button>
+<button class="btn btn-secondary btn-sm" onclick="deselectAllColumns()">全不選</button>
+</div>
+<div id="columnCheckboxes" class="column-checkboxes"></div>
+</div>
+</div>
+<div class="form-group" style="margin-bottom:10px">
+<input type="text" id="globalSearch" placeholder="🔍 全域搜尋..." style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:4px;font-size:12px" oninput="filterTable()">
+</div>
+<div id="outputTable"></div>
+<div class="panel-buttons">
+<button class="btn btn-primary" onclick="exportCSV()">💾 Save as...</button>
+<button class="btn btn-secondary" onclick="copyOutput()">📋 Copy to clipboard</button>
+</div>
+</div>
+</div>
+</div>
+<div class="tool-options">
+<div class="options-grid">
+<div class="option-group">
+<h3>Sort Column</h3>
+<div class="form-group">
+<label>Sort by this column (number)</label>
+<input type="number" id="sortColumn" value="1" min="1" onchange="updateTable()">
+</div>
+<div class="form-group">
+<label>Secondary sort position(s)</label>
+<input type="text" id="secondarySort" placeholder='2 or "3, 5"' onchange="updateTable()">
+<span class="info-text">例如: 2 或 "3, 5"</span>
+</div>
+</div>
+<div class="option-group">
+<h3>Headers and Sort Order</h3>
+<div class="form-group">
+<div class="checkbox-group">
+<input type="checkbox" id="hasHeaders" checked onchange="updateTable()">
+<label for="hasHeaders" style="margin:0">Sort Headers</label>
+</div>
+<span class="info-text">排序時標題與其他值一同移動</span>
+</div>
+<div class="form-group">
+<label>Select CSV sort method</label>
+<select id="sortMethod" onchange="updateTable()">
+<option value="alphabetical">Sort Alphabetically</option>
+<option value="numeric">Sort Numerically</option>
+<option value="length">Sort by Length</option>
+<option value="complexity">Sort by Complexity</option>
+</select>
+</div>
+<div class="form-group">
+<label>Select CSV sort order</label>
+<select id="sortOrder" onchange="updateTable()">
+<option value="asc">Increasing Order</option>
+<option value="desc">Decreasing Order</option>
+</select>
+</div>
+</div>
+<div class="option-group">
+<h3>CSV Tidy Up</h3>
+<div class="form-group">
+<div class="checkbox-group">
+<input type="checkbox" id="deleteComments" checked onchange="updateTable()">
+<label for="deleteComments" style="margin:0">Delete Specified Comments</label>
+</div>
+</div>
+<div class="form-group">
+<label>Comment symbol</label>
+<input type="text" id="commentSymbol" value="#" maxlength="1" onchange="updateTable()">
+</div>
+<div class="form-group">
+<div class="checkbox-group">
+<input type="checkbox" id="deleteEmptyLines" checked onchange="updateTable()">
+<label for="deleteEmptyLines" style="margin:0">Delete Empty Lines</label>
+</div>
+</div>
+</div>
+<div class="option-group">
+<h3>CSV Settings</h3>
+<div class="form-group">
+<label>Delimiter</label>
+<select id="delimiter" onchange="updateTable()">
+<option value="auto">Auto Detect</option>
+<option value=",">, (Comma)</option>
+<option value=";">; (Semicolon)</option>
+<option value="\t">Tab</option>
+<option value="|">| (Pipe)</option>
+</select>
+</div>
+<div class="form-group">
+<div class="checkbox-group">
+<input type="checkbox" id="detectHeaders" checked onchange="updateTable()">
+<label for="detectHeaders" style="margin:0">Auto-detect headers</label>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="footer">CSV Column Sorter | Pure Frontend Tool</div>
+<script src="https://unpkg.com/tabulator-tables@5.5.2/dist/js/tabulator.min.js"></script>
+<script>
+let csvData=[];
+let headers=[];
+let hasHeadersFlag=true;
+let table=null;
+let visibleColumns=[];
+let lastHeadersLength = 0;
+
+document.getElementById('fileInput').addEventListener('change',function(e){
+const file=e.target.files[0];
+if(file){
+const reader=new FileReader();
+reader.onload=function(event){
+document.getElementById('inputCSV').value=event.target.result;
+updateTable();
+};
+reader.readAsText(file);
+}
+});
+
+function detectDelimiter(text){
+const delimiters=[',',';','\t','|'];
+const lines=text.split('\n').slice(0,10).filter(line=>line.trim());
+if(lines.length===0)return',';
+let maxCount=0;
+let bestDelimiter=',';
+for(const delim of delimiters){
+const counts=lines.map(line=>(line.match(new RegExp('\\'+delim,'g'))||[]).length);
+const avg=counts.reduce((a,b)=>a+b,0)/counts.length;
+if(avg>maxCount){
+maxCount=avg;
+bestDelimiter=delim;
+}
+}
+return bestDelimiter;
+}
+
+function parseCSV(text,delimiter){
+if(!text.trim())return[];
+let lines=text.split('\n');
+if(document.getElementById('deleteEmptyLines').checked){
+lines=lines.filter(line=>line.trim()!=='');
+}
+if(document.getElementById('deleteComments').checked){
+const commentSym=document.getElementById('commentSymbol').value||'#';
+lines=lines.filter(line=>!line.trim().startsWith(commentSym));
+}
+const rows=[];
+for(const line of lines){
+if(!line.trim())continue;
+const row=[];
+let current='';
+let inQuotes=false;
+for(let i=0;i<line.length;i++){
+const char=line[i];
+const nextChar=i+1<line.length?line[i+1]:null;
+if(char==='"'&&!inQuotes){
+inQuotes=true;
+}else if(char==='"'&&inQuotes){
+if(nextChar==='"'){
+current+='"';
+i++;
+}else if(nextChar===delimiter||nextChar===null||nextChar==='\r'){
+inQuotes=false;
+}else{
+current+='"';
+inQuotes=false;
+}
+}else if(char===delimiter&&!inQuotes){
+row.push(current);
+current='';
+}else{
+current+=char;
+}
+}
+row.push(current);
+rows.push(row);
+}
+const maxCols=Math.max(...rows.map(r=>r.length));
+rows.forEach(row=>{
+while(row.length<maxCols)row.push('');
+});
+return rows;
+}
+
+function detectHeaders(rows){
+if(rows.length<2)return false;
+const first=rows[0];
+const second=rows[1];
+if(first.length!==second.length)return false;
+const firstRowNumeric=first.every(cell=>{
+const trimmed=cell.trim();
+return trimmed===''||!isNaN(trimmed)||trimmed.match(/^\d+[.,]\d+$/);
+});
+return!firstRowNumeric;
+}
+
+function sortData(data,sortCol,secondarySort,method,order,hasHeaders){
+if(data.length===0)return data;
+const dataCopy=data.map(row=>[...row]);
+const headerRow=hasHeaders?dataCopy.shift():null;
+const sortColIndex=Math.max(0,Math.min(sortCol-1,dataCopy[0].length-1));
+const secondaryIndices=secondarySort?secondarySort.split(',').map(s=>parseInt(s.trim())-1).filter(i=>i>=0):[];
+function compare(a,b){
+let result=0;
+const aVal=a[sortColIndex]||'';
+const bVal=b[sortColIndex]||'';
+if(method==='numeric'){
+const aNum=parseFloat(aVal)||0;
+const bNum=parseFloat(bVal)||0;
+result=aNum-bNum;
+}else if(method==='length'){
+result=(aVal.length)-(bVal.length);
+}else if(method==='complexity'){
+const aComplex=aVal.match(/[^a-zA-Z0-9\s]/g)?.length||0;
+const bComplex=bVal.match(/[^a-zA-Z0-9\s]/g)?.length||0;
+result=aComplex-bComplex;
+}else{
+result=aVal.localeCompare(bVal,'zh-TW');
+}
+if(result===0&&secondaryIndices.length>0){
+for(const secIdx of secondaryIndices){
+if(secIdx<a.length&&secIdx<b.length){
+const secResult=(a[secIdx]||'').localeCompare(b[secIdx]||'','zh-TW');
+if(secResult!==0){
+result=secResult;
+break;
+}
+}
+}
+}
+return order==='asc'?result:-result;
+}
+dataCopy.sort(compare);
+if(headerRow)dataCopy.unshift(headerRow);
+return dataCopy;
+}
+
+function updateTable(){
+const inputText=document.getElementById('inputCSV').value.trim();
+if(!inputText){
+if(table)table.clearData();
+document.getElementById('errorMessage').classList.add('hidden');
+document.getElementById('successMessage').classList.add('hidden');
+document.getElementById('columnSelector').classList.add('hidden');
+return;
+}
+try{
+const delimiterSelect=document.getElementById('delimiter').value;
+const delimiter=delimiterSelect==='auto'?detectDelimiter(inputText):delimiterSelect;
+let rows=parseCSV(inputText,delimiter);
+if(rows.length===0){
+throw new Error('No data found in CSV');
+}
+hasHeadersFlag=document.getElementById('detectHeaders').checked?detectHeaders(rows):document.getElementById('hasHeaders').checked;
+if(hasHeadersFlag&&rows.length>0){
+headers=rows[0];
+rows=rows.slice(1);
+}else{
+const maxCols=Math.max(...rows.map(r=>r.length));
+headers=Array.from({length:maxCols},(_,i)=>`Column ${i+1}`);
+}
+if(visibleColumns.length === 0 || lastHeadersLength !== headers.length || visibleColumns.some(i=>i>=headers.length||i<0)){
+visibleColumns=headers.map((_,i)=>i);
+lastHeadersLength = headers.length;
+generateColumnSelector();
+}else{
+generateColumnSelector(); // 每次數據載入都確保重新生成或顯示選擇器
+}
+const sortCol=parseInt(document.getElementById('sortColumn').value)||1;
+const secondarySort=document.getElementById('secondarySort').value.trim();
+const sortMethod=document.getElementById('sortMethod').value;
+const sortOrder=document.getElementById('sortOrder').value;
+const sortHeaders=document.getElementById('hasHeaders').checked;
+let allRows=sortHeaders&&hasHeadersFlag?[headers,...rows]:rows;
+allRows=sortData(allRows,sortCol,secondarySort,sortMethod,sortOrder,sortHeaders&&hasHeadersFlag);
+if(sortHeaders&&hasHeadersFlag){
+headers=allRows[0];
+rows=allRows.slice(1);
+}else{
+rows=allRows;
+}
+csvData=rows;
+const filteredColumns=visibleColumns.map(i=>({
+title:headers[i],
+field:`col${i}`,
+headerFilter:"input",
+sorter:"string",
+headerSort:true
+}));
+if(!table){
+table=new Tabulator("#outputTable",{
+data:rows.map(row=>{
+const obj={};
+visibleColumns.forEach(i=>{
+obj[`col${i}`]=row[i]||'';
+});
+return obj;
+}),
+columns:filteredColumns,
+layout:"fitColumns",
+pagination:true,
+paginationSize:50,
+movableColumns:true,
+resizableColumns:true,
+tooltips:true
+});
+}else{
+table.setColumns(filteredColumns);
+table.setData(rows.map(row=>{
+const obj={};
+visibleColumns.forEach(i=>{
+obj[`col${i}`]=row[i]||'';
+});
+return obj;
+}));
+}
+const globalSearchValue=document.getElementById('globalSearch').value;
+if(globalSearchValue){
+filterTable();
+}
+document.getElementById('errorMessage').classList.add('hidden');
+document.getElementById('successMessage').classList.remove('hidden');
+document.getElementById('successMessage').textContent=`成功處理 ${rows.length} 行資料，${headers.length} 個欄位`;
+}catch(error){
+document.getElementById('errorMessage').classList.remove('hidden');
+document.getElementById('errorMessage').textContent=`錯誤: ${error.message}`;
+document.getElementById('successMessage').classList.add('hidden');
+document.getElementById('columnSelector').classList.add('hidden');
+if(table)table.clearData();
+}
+}
+
+function clearInput(){
+document.getElementById('inputCSV').value='';
+visibleColumns = [];
+lastHeadersLength = 0;
+const container = document.getElementById('columnCheckboxes');
+if(container) container.innerHTML = '';
+updateTable();
+}
+
+function copyInput(){
+document.getElementById('inputCSV').select();
+document.execCommand('copy');
+}
+
+function escapeCSVValue(value){
+if(value.includes(',')||value.includes('"')||value.includes('\n')){
+return'"'+value.replace(/"/g,'""')+'"';
+}
+return value;
+}
+
+function generateColumnSelector(){
+const container=document.getElementById('columnCheckboxes');
+container.innerHTML='';
+headers.forEach((header,i)=>{
+const item=document.createElement('div');
+item.className='column-checkbox-item';
+const checkbox=document.createElement('input');
+checkbox.type='checkbox';
+checkbox.id=`colCheckbox${i}`;
+checkbox.checked=visibleColumns.includes(i);
+checkbox.addEventListener('change',function(){toggleColumnVisibility(i);});
+const label=document.createElement('label');
+label.htmlFor=`colCheckbox${i}`;
+label.textContent=`${i+1}. ${header}`;
+item.appendChild(checkbox);
+item.appendChild(label);
+container.appendChild(item);
+});
+document.getElementById('columnSelector').classList.remove('hidden');
+}
+
+function updateColumnSelectorCheckboxes(){
+headers.forEach((header,i)=>{
+const checkbox=document.getElementById(`colCheckbox${i}`);
+if(checkbox){
+checkbox.checked=visibleColumns.includes(i);
+const label=checkbox.nextElementSibling;
+if(label&&label.tagName==='LABEL'){
+label.textContent=`${i+1}. ${header}`;
+}
+}
+});
+}
+
+function toggleColumnVisibility(index){
+const checkbox=document.getElementById(`colCheckbox${index}`);
+const isChecked=checkbox.checked;
+if(isChecked){
+if(!visibleColumns.includes(index)){
+visibleColumns.push(index);
+visibleColumns.sort((a,b)=>a-b);
+}
+}else{
+if(visibleColumns.length<=1){
+alert('至少需要選擇一個欄位');
+checkbox.checked=true;
+return;
+}
+visibleColumns=visibleColumns.filter(i=>i!==index);
+}
+updateTable();
+}
+
+function selectAllColumns(){
+visibleColumns=headers.map((_,i)=>i);
+headers.forEach((_,i)=>{
+const checkbox=document.getElementById(`colCheckbox${i}`);
+if(checkbox)checkbox.checked=true;
+});
+updateTable();
+}
+
+function deselectAllColumns(){
+if(visibleColumns.length===0)return;
+const firstIndex=visibleColumns[0];
+visibleColumns=[firstIndex];
+headers.forEach((_,i)=>{
+const checkbox=document.getElementById(`colCheckbox${i}`);
+if(checkbox)checkbox.checked=(i===firstIndex);
+});
+updateTable();
+}
+
+function toggleColumnSelector(){
+const selector=document.getElementById('columnSelector');
+selector.classList.toggle('collapsed');
+}
+
+function copyOutput(){
+if(csvData.length===0)return;
+const filteredHeaders=visibleColumns.map(i=>headers[i]);
+const filteredData=csvData.map(row=>visibleColumns.map(i=>row[i]||''));
+const output=[filteredHeaders.map(escapeCSVValue).join(','),...filteredData.map(row=>row.map(escapeCSVValue).join(','))].join('\n');
+navigator.clipboard.writeText(output).then(()=>{
+alert('已複製到剪貼簿');
+}).catch(()=>{
+const textarea=document.createElement('textarea');
+textarea.value=output;
+document.body.appendChild(textarea);
+textarea.select();
+document.execCommand('copy');
+document.body.removeChild(textarea);
+alert('已複製到剪貼簿');
+});
+}
+
+function filterTable(){
+if(!table)return;
+const searchValue=document.getElementById('globalSearch').value.toLowerCase();
+if(searchValue){
+table.setFilter(function(data){
+for(let key in data){
+if(String(data[key]).toLowerCase().includes(searchValue)){
+return true;
+}
+}
+return false;
+});
+}else{
+table.clearFilter();
+}
+}
+
+function exportCSV(){
+if(csvData.length===0)return;
+const filteredHeaders=visibleColumns.map(i=>headers[i]);
+const filteredData=csvData.map(row=>visibleColumns.map(i=>row[i]||''));
+const output=[filteredHeaders.map(escapeCSVValue).join(','),...filteredData.map(row=>row.map(escapeCSVValue).join(','))].join('\n');
+const blob=new Blob([output],{type:'text/csv;charset=utf-8;'});
+const link=document.createElement('a');
+const url=URL.createObjectURL(blob);
+link.setAttribute('href',url);
+link.setAttribute('download','sorted.csv');
+link.style.visibility='hidden';
+document.body.appendChild(link);
+link.click();
+document.body.removeChild(link);
+}
+
+document.getElementById('inputCSV').addEventListener('input',updateTable);
+document.getElementById('inputCSV').addEventListener('paste',function(){setTimeout(updateTable,10);});
+</script>
+</body>
+</html>
