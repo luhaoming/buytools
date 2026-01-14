@@ -28,14 +28,20 @@ body{font-family:"Hiragino Kaku Gothic ProN","Meiryo",system-ui,sans-serif;backg
 .btn-danger{background:#dc3545;color:#fff}
 .btn-danger:hover{background:#c82333}
 .tool-options{background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.08);padding:20px;margin-bottom:20px}
-.options-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px}
+.options-main{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-end;margin-bottom:15px;padding-bottom:15px;border-bottom:1px solid #eee}
+.advanced-panel{display:none;padding-top:10px}
+.advanced-panel.show{display:block}
+.options-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px}
 .option-group{border:1px solid #eee;border-radius:6px;padding:15px;background:#fafafa}
 .option-group h3{font-size:13px;font-weight:600;color:#555;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #667eea}
 .form-group{margin-bottom:12px}
+.form-group.inline{margin-bottom:0;flex:1;min-width:200px}
 .form-group label{display:block;font-size:12px;color:#666;margin-bottom:6px;font-weight:500}
 .form-group input[type="text"],.form-group input[type="number"],.form-group select{width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:4px;font-size:12px}
 .form-group input[type="checkbox"]{margin-right:6px}
 .checkbox-group{display:flex;align-items:center;gap:8px}
+.btn-advanced-toggle{background:#f8f9fa;border:1px solid #ddd;color:#666;font-size:12px;padding:8px 15px;border-radius:4px;cursor:pointer;transition:all .2s}
+.btn-advanced-toggle:hover{background:#eee;border-color:#ccc}
 .info-text{font-size:11px;color:#999;margin-top:4px}
 .error-message{background:#ffeef0;color:#cb2431;padding:12px;border-radius:6px;margin-bottom:15px;font-size:12px;border-left:4px solid #cb2431}
 .success-message{background:#e6ffec;color:#22863a;padding:12px;border-radius:6px;margin-bottom:15px;font-size:12px;border-left:4px solid #22863a}
@@ -113,28 +119,51 @@ body{font-family:"Hiragino Kaku Gothic ProN","Meiryo",system-ui,sans-serif;backg
 </div>
 </div>
 <div class="tool-options">
-<div class="options-grid">
-<div class="option-group">
-<h3>Sort Column</h3>
-<div class="form-group">
-<label>Sort by this column (number)</label>
-<input type="number" id="sortColumn" value="1" min="1" onchange="updateTable()">
+<div class="options-main">
+<div class="form-group inline">
+<label>Delimiter</label>
+<select id="delimiter" onchange="updateTable()">
+<option value="auto">Auto Detect</option>
+<option value=",">, (Comma)</option>
+<option value=";">; (Semicolon)</option>
+<option value="\t">Tab</option>
+<option value="|">| (Pipe)</option>
+</select>
 </div>
-<div class="form-group">
-<label>Secondary sort position(s)</label>
-<input type="text" id="secondarySort" placeholder='2 or "3, 5"' onchange="updateTable()">
-<span class="info-text">例如: 2 或 "3, 5"</span>
-</div>
-</div>
-<div class="option-group">
-<h3>Headers and Sort Order</h3>
-<div class="form-group">
+<div class="form-group inline" style="min-width:150px">
+<label>&nbsp;</label>
 <div class="checkbox-group">
 <input type="checkbox" id="hasHeaders" checked onchange="updateTable()">
-<label for="hasHeaders" style="margin:0">Sort Headers</label>
+<label for="hasHeaders" style="margin:0">First row is header</label>
 </div>
-<span class="info-text">排序時標題與其他值一同移動</span>
 </div>
+<button class="btn-advanced-toggle" onclick="toggleAdvancedSettings()">⚙️ Advanced Settings</button>
+</div>
+
+<div id="advancedPanel" class="advanced-panel">
+<div class="options-grid">
+<div class="option-group">
+<h3>Data Cleanup</h3>
+<div class="form-group">
+<div class="checkbox-group">
+<input type="checkbox" id="deleteComments" checked onchange="updateTable()">
+<label for="deleteComments" style="margin:0">Filter Comments</label>
+</div>
+</div>
+<div class="form-group">
+<label>Comment symbol</label>
+<input type="text" id="commentSymbol" value="#" maxlength="1" onchange="updateTable()">
+</div>
+<div class="form-group">
+<div class="checkbox-group">
+<input type="checkbox" id="deleteEmptyLines" checked onchange="updateTable()">
+<label for="deleteEmptyLines" style="margin:0">Delete Empty Lines</label>
+</div>
+</div>
+</div>
+
+<div class="option-group">
+<h3>More Options</h3>
 <div class="form-group">
 <label>Select CSV sort method</label>
 <select id="sortMethod" onchange="updateTable()">
@@ -151,42 +180,11 @@ body{font-family:"Hiragino Kaku Gothic ProN","Meiryo",system-ui,sans-serif;backg
 <option value="desc">Decreasing Order</option>
 </select>
 </div>
-</div>
-<div class="option-group">
-<h3>CSV Tidy Up</h3>
-<div class="form-group">
-<div class="checkbox-group">
-<input type="checkbox" id="deleteComments" checked onchange="updateTable()">
-<label for="deleteComments" style="margin:0">Delete Specified Comments</label>
-</div>
-</div>
-<div class="form-group">
-<label>Comment symbol</label>
-<input type="text" id="commentSymbol" value="#" maxlength="1" onchange="updateTable()">
-</div>
-<div class="form-group">
-<div class="checkbox-group">
-<input type="checkbox" id="deleteEmptyLines" checked onchange="updateTable()">
-<label for="deleteEmptyLines" style="margin:0">Delete Empty Lines</label>
-</div>
-</div>
-</div>
-<div class="option-group">
-<h3>CSV Settings</h3>
-<div class="form-group">
-<label>Delimiter</label>
-<select id="delimiter" onchange="updateTable()">
-<option value="auto">Auto Detect</option>
-<option value=",">, (Comma)</option>
-<option value=";">; (Semicolon)</option>
-<option value="\t">Tab</option>
-<option value="|">| (Pipe)</option>
-</select>
-</div>
 <div class="form-group">
 <div class="checkbox-group">
 <input type="checkbox" id="detectHeaders" checked onchange="updateTable()">
-<label for="detectHeaders" style="margin:0">Auto-detect headers</label>
+<label for="detectHeaders" style="margin:0">Background Auto-detect</label>
+</div>
 </div>
 </div>
 </div>
@@ -364,19 +362,7 @@ generateColumnSelector();
 }else{
 generateColumnSelector(); // 每次數據載入都確保重新生成或顯示選擇器
 }
-const sortCol=parseInt(document.getElementById('sortColumn').value)||1;
-const secondarySort=document.getElementById('secondarySort').value.trim();
-const sortMethod=document.getElementById('sortMethod').value;
-const sortOrder=document.getElementById('sortOrder').value;
-const sortHeaders=document.getElementById('hasHeaders').checked;
-let allRows=sortHeaders&&hasHeadersFlag?[headers,...rows]:rows;
-allRows=sortData(allRows,sortCol,secondarySort,sortMethod,sortOrder,sortHeaders&&hasHeadersFlag);
-if(sortHeaders&&hasHeadersFlag){
-headers=allRows[0];
-rows=allRows.slice(1);
-}else{
-rows=allRows;
-}
+// 移除手動排序邏輯，交由 Tabulator 處理
 csvData=rows;
 const filteredColumns=visibleColumns.map(i=>({
 title:headers[i],
@@ -527,13 +513,26 @@ const selector=document.getElementById('columnSelector');
 selector.classList.toggle('collapsed');
 }
 
+function toggleAdvancedSettings(){
+const panel = document.getElementById('advancedPanel');
+panel.classList.toggle('show');
+}
+
 function copyOutput(){
-if(csvData.length===0)return;
-const filteredHeaders=visibleColumns.map(i=>headers[i]);
-const filteredData=csvData.map(row=>visibleColumns.map(i=>row[i]||''));
-const output=[filteredHeaders.map(escapeCSVValue).join(','),...filteredData.map(row=>row.map(escapeCSVValue).join(','))].join('\n');
+if(!table) return;
+const activeData = table.getData("active");
+if(activeData.length === 0) return;
+
+const filteredHeaders = visibleColumns.map(i => headers[i]);
+const output = [
+filteredHeaders.map(escapeCSVValue).join(','),
+...activeData.map(rowObj => {
+return visibleColumns.map(i => rowObj[`col${i}`] || '').map(escapeCSVValue).join(',');
+})
+].join('\n');
+
 navigator.clipboard.writeText(output).then(()=>{
-alert('已複製到剪貼簿');
+alert('已複製篩選與排序後的資料到剪貼簿');
 }).catch(()=>{
 const textarea=document.createElement('textarea');
 textarea.value=output;
@@ -541,7 +540,7 @@ document.body.appendChild(textarea);
 textarea.select();
 document.execCommand('copy');
 document.body.removeChild(textarea);
-alert('已複製到剪貼簿');
+alert('已複製篩選與排序後的資料到剪貼簿');
 });
 }
 
@@ -563,15 +562,23 @@ table.clearFilter();
 }
 
 function exportCSV(){
-if(csvData.length===0)return;
-const filteredHeaders=visibleColumns.map(i=>headers[i]);
-const filteredData=csvData.map(row=>visibleColumns.map(i=>row[i]||''));
-const output=[filteredHeaders.map(escapeCSVValue).join(','),...filteredData.map(row=>row.map(escapeCSVValue).join(','))].join('\n');
+if(!table) return;
+const activeData = table.getData("active");
+if(activeData.length === 0) return;
+
+const filteredHeaders = visibleColumns.map(i => headers[i]);
+const output = [
+filteredHeaders.map(escapeCSVValue).join(','),
+...activeData.map(rowObj => {
+return visibleColumns.map(i => rowObj[`col${i}`] || '').map(escapeCSVValue).join(',');
+})
+].join('\n');
+
 const blob=new Blob([output],{type:'text/csv;charset=utf-8;'});
 const link=document.createElement('a');
 const url=URL.createObjectURL(blob);
 link.setAttribute('href',url);
-link.setAttribute('download','sorted.csv');
+link.setAttribute('download','sorted_filtered.csv');
 link.style.visibility='hidden';
 document.body.appendChild(link);
 link.click();
