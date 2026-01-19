@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0">
+<title>Receipt Text Maker</title>
+<style>
+  :root {
+    --primary-dark: #1a202c;
+    --accent-blue: #3182ce;
+    --bg-gray: #f8fafc;
+    --border-color: #e2e8f0;
+  }
+  body { font-family: system-ui, -apple-system, sans-serif; margin: 0; background: var(--bg-gray); color: #333; }
+  .navbar { background: var(--primary-dark); color: white; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
+  .navbar .brand { font-weight: bold; font-size: 16px; }
+  .navbar .version { font-size: 10px; background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 4px; }
+  .container { padding: 12px; max-width: 600px; margin: 0 auto; }
+  .card { background: white; border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+  .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .label { font-weight: bold; font-size: 16px; color: #4a5568; }
+  .btn { 
+    min-height: 48px; padding: 10px 14px; border: 1px solid #ccc; border-radius: 10px; 
+    background: #fff; font-size: 18px; cursor: pointer; touch-action: manipulation;
+  }
+  .btn.primary { background: var(--primary-dark); color: white; border-color: var(--primary-dark); }
+  .btn.pill-active { background: #edf2f7; border-color: var(--accent-blue); color: var(--accent-blue); font-weight: bold; }
+  .clear-btn { padding: 6px 12px; font-size: 14px; border: 1px solid #e53e3e; color: #e53e3e; border-radius: 8px; background: transparent; }
+  textarea, input { width: 100%; padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 10px; box-sizing: border-box; background: #fff; }
+  .pillbar { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .output-box { background: #f1f5f9; border: 1px dashed #cbd5e0; margin: 8px 0; min-height: 44px; font-size: 16px; resize: none; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+
+<div class="navbar">
+  <div class="brand">Receipt Text Maker</div>
+  <div class="version">v2.6</div>
+</div>
+
+<div class="container">
+  <div class="card">
+    <div class="header-row">
+      <span class="label">1. 貼上文字</span>
+      <button type="button" class="clear-btn" id="clearAll">清除</button>
+    </div>
+    <textarea id="raw" placeholder="貼上轉帳訊息..."></textarea>
+    <div class="pillbar" id="candidates"></div>
+  </div>
+
+  <div class="card">
+    <span class="label">2. 類別</span>
+    <div class="pillbar" id="catBtns">
+      <button type="button" class="btn pill-active" data-val="房租">房租</button>
+      <button type="button" class="btn" data-val="水費">水費</button>
+      <button type="button" class="btn" data-val="電費">電費</button>
+      <button type="button" class="btn" data-val="__custom__">其他</button>
+    </div>
+    <input id="catCustom" class="hidden" placeholder="自訂類別名稱" style="margin-top:12px">
+  </div>
+
+  <div class="card">
+    <span class="label">3. 收款對象</span>
+    <div class="pillbar" id="payerBtns">
+      <button type="button" class="btn pill-active" data-val="#10">#10</button>
+      <button type="button" class="btn" data-val="#30">#30</button>
+      <button type="button" class="btn" data-val="#31">#31</button>
+      <button type="button" class="btn" data-val="#32">#32</button>
+      <button type="button" class="btn" data-val="#40">#40</button>
+      <button type="button" class="btn" data-val="#41">#41</button>
+      <button type="button" class="btn" data-val="#42">#42</button>
+      <button type="button" class="btn" data-val="#50">#50</button>
+      <button type="button" class="btn" data-val="#51">#51</button>
+      <button type="button" class="btn" data-val="#52">#52</button>
+      <button type="button" class="btn" data-val="#60">#60</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <span class="label">4. 回應模式</span>
+    <textarea id="outReply" class="output-box" readonly></textarea>
+    <button type="button" id="copyReply" class="btn primary" style="width:100%; margin-bottom:12px">複製回應</button>
+    
+    <span class="label">5. 記帳模式</span>
+    <textarea id="outBook" class="output-box" readonly></textarea>
+    <button type="button" id="copyBook" class="btn" style="width:100%">複製記帳</button>
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let state = { amount: "", cat: "房租", payer: "#10" };
+
+const render = () => {
+  const d = new Date();
+  const date = `${d.getMonth() + 1}/${d.getDate()}`;
+  $("outReply").value = state.amount ? `[${date}] 已收到${state.cat} ${state.amount}, 謝謝` : "";
+  $("outBook").value = state.amount ? `${state.payer}${state.cat} , ${state.amount}` : "";
+};
+
+$("raw").oninput = () => {
+  const nums = [...new Set($("raw").value.match(/(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?/g) || [])];
+  $("candidates").innerHTML = "";
+  nums.forEach(n => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "btn";
+    b.textContent = n;
+    b.onclick = () => {
+      $("raw").blur();
+      state.amount = n.replace(/,/g, "");
+      document.querySelectorAll("#candidates .btn").forEach(x => x.classList.remove("pill-active"));
+      b.classList.add("pill-active");
+      render();
+    };
+    $("candidates").appendChild(b);
+  });
+  if (nums.length === 1) $("candidates").firstChild.click();
+};
+
+$("clearAll").onclick = () => {
+  $("raw").value = "";
+  $("candidates").innerHTML = "";
+  state.amount = "";
+  render();
+};
+
+const setupPills = (containerId, key, onSelect) => {
+  document.querySelectorAll(`#${containerId} .btn`).forEach(btn => {
+    btn.onclick = () => {
+      $("raw").blur();
+      document.querySelectorAll(`#${containerId} .btn`).forEach(b => b.classList.remove("pill-active"));
+      btn.classList.add("pill-active");
+      state[key] = btn.dataset.val;
+      if (onSelect) onSelect(btn.dataset.val);
+      render();
+    };
+  });
+};
+
+setupPills("catBtns", "cat", (val) => {
+  $("catCustom").classList.toggle("hidden", val !== "__custom__");
+  if (val === "__custom__") state.cat = $("catCustom").value || "其他";
+});
+setupPills("payerBtns", "payer");
+
+$("catCustom").oninput = (e) => { state.cat = e.target.value || "其他"; render(); };
+
+async function doCopy(id, btn) {
+  if (!$(id).value) return;
+  try {
+    await navigator.clipboard.writeText($(id).value);
+    const old = btn.textContent;
+    btn.textContent = "✅ 已複製";
+    setTimeout(() => btn.textContent = old, 1000);
+  } catch (err) { alert("複製失敗"); }
+}
+
+$("copyReply").onclick = function() { doCopy("outReply", this); };
+$("copyBook").onclick = function() { doCopy("outBook", this); };
+
+$("raw").oninput();
+</script>
+</body>
+</html>
