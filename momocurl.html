@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Momo All-in-One Tool - ver=2026-01-19</title>
+    <title>Momo All-in-One Tool - ver=2026-01-19.008</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.global.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <style>
@@ -11,8 +11,8 @@
         .output { white-space: pre-wrap; word-break: break-all; font-family: monospace; font-size: 12px; cursor: pointer; }
         textarea { font-size: 12px; }
         .card { margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .card-header { padding: 10px; font-weight: bold; background-color: #fff; }
-        .tool-title { border-left: 4px solid #0d6efd; padding-left: 10px; margin-bottom: 10px; }
+        .card-header { padding: 10px; font-weight: bold; background-color: #fff; font-size: 14px; }
+        .tool-title { border-left: 4px solid #0d6efd; padding-left: 10px; margin-bottom: 10px; font-weight: bold; }
         .tool-title.secondary { border-left-color: #6c757d; }
     </style>
 </head>
@@ -29,11 +29,15 @@
 
                 <div v-if="configOutput" class="mt-3">
                     <div class="card mb-2">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <span>Config (點擊內容複製)</span>
-                        </div>
+                        <div class="card-header">Config (點擊內容複製)</div>
                         <div class="card-body p-0">
                             <div class="output bg-light p-2 border-0" @click="copyToClipboard(configOutput)">{{ configOutput }}</div>
+                        </div>
+                    </div>
+                    <div class="card mb-2" v-if="rawJson">
+                        <div class="card-header">JSON Payload (點擊內容複製)</div>
+                        <div class="card-body p-0">
+                            <div class="output bg-light p-2 border-0" @click="copyToClipboard(rawJson)">{{ rawJson }}</div>
                         </div>
                     </div>
                 </div>
@@ -45,7 +49,7 @@
         <h4 class="tool-title secondary">Momo Cron Generator (第二工具)</h4>
         <div class="card">
             <div class="card-body">
-                <textarea class="form-control mb-2" rows="4" v-model="cronInput" placeholder="貼上活動時間資訊 (例如: 10:00、13:00)..."></textarea>
+                <textarea class="form-control mb-2" rows="4" v-model="cronInput" placeholder="貼上活動時間資訊..."></textarea>
                 <div class="d-flex gap-2 mb-3">
                     <button class="btn btn-secondary btn-sm flex-grow-1" @click="generateCron" :disabled="!cronInput">產生排程</button>
                     <button class="btn btn-outline-danger btn-sm" @click="clearCron">清理</button>
@@ -54,11 +58,11 @@
                 <div v-if="cronEarly || cronExact">
                     <div class="mb-3">
                         <label class="small fw-bold text-muted">提早一分鐘 (搶標用)</label>
-                        <div class="output bg-light p-2 border rounded" @click="copyToClipboard(cronEarly)">{{ cronEarly || '無時間資訊' }}</div>
+                        <div class="output bg-light p-2 border rounded" @click="copyToClipboard(cronEarly)">{{ cronEarly }}</div>
                     </div>
                     <div>
                         <label class="small fw-bold text-muted">精準時間</label>
-                        <div class="output bg-light p-2 border rounded" @click="copyToClipboard(cronExact)">{{ cronExact || '無時間資訊' }}</div>
+                        <div class="output bg-light p-2 border rounded" @click="copyToClipboard(cronExact)">{{ cronExact }}</div>
                     </div>
                 </div>
             </div>
@@ -76,6 +80,7 @@
             setup() {
                 const curlInput = ref('');
                 const configOutput = ref('');
+                const rawJson = ref('');
                 const cronInput = ref('');
                 const cronEarly = ref('');
                 const cronExact = ref('');
@@ -88,109 +93,73 @@
                         await navigator.clipboard.writeText(text);
                         clipboardMessage.value = '已複製！';
                         setTimeout(() => clipboardMessage.value = '', 2000);
-                    } catch (err) {
-                        clipboardMessage.value = '複製失敗';
-                    }
+                    } catch (err) {}
                 };
 
-                // --- 主工具邏輯 ---
                 const parseCurl = () => {
                     try {
                         const input = curlInput.value.trim();
                         const urlMatch = input.match(/curl\s+['"]?([^\s'"]+)/);
-                        if (!urlMatch) throw new Error('無法提取 URL');
-                        const apiUrl = urlMatch[1];
                         const dataMatch = input.match(/(?:--data(?:-raw)?|-d)\s+['"](.+?)['"](?:\s|$)/s);
-                        if (!dataMatch) throw new Error('無法提取 POST payload');
+                        if (!urlMatch || !dataMatch) throw new Error('解析 curl 失敗');
                         
                         let postData = dataMatch[1].replace(/\\"/g, '"').replace(/\\\\/g, '\\');
                         const jsonData = JSON.parse(postData);
+                        rawJson.value = JSON.stringify(jsonData);
                         
-                        // 加上連動的活動標題註解
                         const comment = currentActivityName.value ? `// ${currentActivityName.value}\n` : '';
-                        configOutput.value = `${comment}api='${apiUrl}'\nisenon=1\nisjson=1\nisapp=1\nisnow=1\npsample='${JSON.stringify(jsonData)}'`;
+                        configOutput.value = `${comment}api='${urlMatch[1]}'\nisenon=1\nisjson=1\nisapp=1\nisnow=1\npsample='${rawJson.value}'`;
                     } catch (error) {
                         configOutput.value = `Error: ${error.message}`;
+                        rawJson.value = '';
                     }
                 };
 
-                const clearCurl = () => {
-                    curlInput.value = '';
-                    configOutput.value = '';
-                };
-
-                // --- 第二工具邏輯 ---
                 const simplifyHours = (hours) => {
                     if (hours.length === 0) return '';
-                    const uniqueHours = [...new Set(hours)].sort((a, b) => a - b);
-                    const simplified = [];
-                    let start = uniqueHours[0];
-                    for (let i = 1; i <= uniqueHours.length; i++) {
-                        if (i === uniqueHours.length || uniqueHours[i] !== uniqueHours[i-1] + 1) {
-                            const end = uniqueHours[i-1];
-                            simplified.push(start === end ? `${start}` : `${start}-${end}`);
-                            if (i < uniqueHours.length) start = uniqueHours[i];
+                    const sorted = [...new Set(hours)].sort((a, b) => a - b);
+                    const res = [];
+                    let start = sorted[0];
+                    for (let i = 1; i <= sorted.length; i++) {
+                        if (i === sorted.length || sorted[i] !== sorted[i-1] + 1) {
+                            res.push(start === sorted[i-1] ? `${start}` : `${start}-${sorted[i-1]}`);
+                            if (i < sorted.length) start = sorted[i];
                         }
                     }
-                    return simplified.join(',');
+                    return res.join(',');
                 };
 
                 const generateCron = () => {
                     const content = cronInput.value.trim();
                     if (!content) {
-                        cronEarly.value = '';
-                        cronExact.value = '';
-                        currentActivityName.value = '';
+                        cronEarly.value = cronExact.value = currentActivityName.value = '';
                         return;
                     }
-
                     const lines = content.split('\n');
-                    const activityName = lines[0].trim();
-                    currentActivityName.value = activityName; // 存起來給主工具用
-                    
-                    const comment = `#${activityName}`;
+                    currentActivityName.value = lines[0].trim();
                     const times = content.match(/\d{2}:\d{2}/g) || [];
-
                     if (times.length === 0) {
-                        cronEarly.value = '找不到時間資訊';
-                        cronExact.value = '找不到時間資訊';
+                        cronEarly.value = cronExact.value = '找不到時間資訊';
                         return;
                     }
-
-                    const [_, firstMinute] = times[0].split(':').map(Number);
-                    const hoursExact = times.map(t => parseInt(t.split(':')[0]));
-                    const hoursEarly = times.map(t => {
+                    const [_, firstMin] = times[0].split(':').map(Number);
+                    const hExact = times.map(t => parseInt(t.split(':')[0]));
+                    const hEarly = times.map(t => {
                         const [h, m] = t.split(':').map(Number);
-                        return (m === 0) ? (h - 1 + 24) % 24 : h;
+                        return m === 0 ? (h - 1 + 24) % 24 : h;
                     });
-
-                    const minEarly = (firstMinute - 1 + 60) % 60;
-                    const hExactStr = simplifyHours(hoursExact);
-                    const hEarlyStr = simplifyHours(hoursEarly);
-
-                    cronEarly.value = `${comment}\n${minEarly} ${hEarlyStr} * * * ( sleep 50 && ~/tasks/gchkin.sh redbag)\n${minEarly} ${hEarlyStr} * * * ( sleep 55 && ~/tasks/gchkin.sh redbag)`;
-                    cronExact.value = `${comment}\n${firstMinute} ${hExactStr} * * * ~/tasks/gchkin.sh redbag`;
-                    
-                    // 如果主工具已經有結果，同步更新註解
-                    if (curlInput.value && configOutput.value && !configOutput.value.startsWith('Error')) {
-                        parseCurl();
-                    }
+                    const mEarly = (firstMin - 1 + 60) % 60;
+                    cronEarly.value = `#${currentActivityName.value}\n${mEarly} ${simplifyHours(hEarly)} * * * ( sleep 50 && ~/tasks/gchkin.sh redbag)\n${mEarly} ${simplifyHours(hEarly)} * * * ( sleep 55 && ~/tasks/gchkin.sh redbag)`;
+                    cronExact.value = `#${currentActivityName.value}\n${firstMin} ${simplifyHours(hExact)} * * * ~/tasks/gchkin.sh redbag`;
+                    if (curlInput.value && !configOutput.value.includes('Error')) parseCurl();
                 };
 
-                const clearCron = () => {
-                    cronInput.value = '';
-                    cronEarly.value = '';
-                    cronExact.value = '';
-                    currentActivityName.value = '';
-                };
+                const clearCurl = () => { curlInput.value = configOutput.value = rawJson.value = ''; };
+                const clearCron = () => { cronInput.value = cronEarly.value = cronExact.value = currentActivityName.value = ''; };
 
-                watch(cronInput, () => generateCron());
+                watch(cronInput, generateCron);
 
-                return {
-                    curlInput, configOutput, parseCurl, clearCurl,
-                    cronInput, cronEarly, cronExact, generateCron, clearCron,
-                    clipboardMessage, copyToClipboard
-                };
+                return { curlInput, configOutput, rawJson, parseCurl, clearCurl, cronInput, cronEarly, cronExact, clearCron, clipboardMessage, copyToClipboard };
             }
         }).mount('#app');
     </script>
