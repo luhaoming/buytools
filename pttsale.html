@@ -26,14 +26,54 @@
     
     <div class="btns">
         <button onclick="generate()">產生貼文</button>
-        <button class="btn-copy" onclick="copy()">拷貝</button>
+        <button class="btn-copy" onclick="copy('output')">拷貝 PTT</button>
+        <button class="btn-copy" onclick="copy('outputFb')">拷貝 FB</button>
+    </div>
+    
+    <label>PTT貼文：</label>
+    <div class="output" id="output"></div>
+    
+    <label>FB貼文：</label>
+    <div class="output" id="outputFb"></div>
+    
+    <hr style="margin: 30px 0; border: 1px solid #ddd;">
+    
+    <label>電話號碼清洗：</label>
+    <input type="text" id="phoneInput" placeholder="範例：0912-123-456" style="width: 100%; padding: 10px; font-size: 14px; margin: 10px 0;">
+    
+    <div class="btns">
+        <button onclick="cleanPhone()">清洗號碼</button>
+        <button class="btn-copy" onclick="copy('phoneOutput')">拷貝</button>
     </div>
     
     <label>輸出：</label>
-    <div class="output" id="output"></div>
+    <div class="output" id="phoneOutput"></div>
 
     <script>
         const toHalf = s => s.replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
+        
+        // 計算字符串的實際顯示寬度（中文字符算2，英文字符算1）
+        const getDisplayWidth = (str) => {
+            let width = 0;
+            for (let i = 0; i < str.length; i++) {
+                const char = str[i];
+                // 判斷是否為中文字符（包括中文標點）
+                if (/[\u4e00-\u9fa5\u3000-\u303f\uff00-\uffef]/.test(char)) {
+                    width += 2;
+                } else {
+                    width += 1;
+                }
+            }
+            return width;
+        };
+        
+        // 填充字符串到指定顯示寬度（考慮中文字符）
+        const padEndWidth = (str, targetWidth) => {
+            const currentWidth = getDisplayWidth(str);
+            if (currentWidth >= targetWidth) return str;
+            const padding = targetWidth - currentWidth;
+            return str + ' '.repeat(padding);
+        };
         
         const generate = () => {
             const input = document.getElementById('input').value.trim();
@@ -49,12 +89,20 @@
 
             if (!items.length) return alert('格式錯誤');
 
-            const maxLen = Math.max(...items.map(i => i.name.length + i.letter.length + 3));
+            // 固定商品名稱欄位寬度，讓金額位置固定（考慮中文字符寬度）
+            const FIXED_NAME_WIDTH = 40;
             
+            // 生成 PTT 貼文格式
             const output = [
                 '商品名稱：',
                 '#. 兌換期限_商品名稱/售價/數量 [剩餘數量]',
-                ...items.map(i => `${i.letter}. ${i.name.padEnd(maxLen - i.letter.length - 2)} $14 ${i.qty.padStart(2)}`),
+                ...items.map(i => {
+                    const prefix = `${i.letter}. `;
+                    const prefixWidth = getDisplayWidth(prefix);
+                    const nameWidth = FIXED_NAME_WIDTH - prefixWidth;
+                    const paddedName = padEndWidth(i.name, nameWidth);
+                    return `${prefix}${paddedName} $14 ${i.qty.padStart(2)}`;
+                }),
                 '',
                 '交易地區：線上',
                 '',
@@ -67,13 +115,39 @@
                 '聯絡方式：站內信,不加賴'
             ].join('\n');
 
+            // 生成 FB 貼文格式
+            const FIXED_NAME_WIDTH_FB = 35;
+            const outputFb = [
+                '---',
+                ...items.map(i => {
+                    const prefix = `${i.letter}. `;
+                    const prefixWidth = getDisplayWidth(prefix);
+                    const nameWidth = FIXED_NAME_WIDTH_FB - prefixWidth;
+                    const paddedName = padEndWidth(i.name, nameWidth);
+                    return `${prefix}${paddedName}  $14 ${i.qty.padStart(2)}`;
+                }),
+                '**交易方式：街口/轉帳 後APP轉贈**'
+            ].join('\n');
+
             document.getElementById('output').textContent = output;
+            document.getElementById('outputFb').textContent = outputFb;
         };
 
-        const copy = () => {
-            const text = document.getElementById('output').textContent;
+        const copy = (outputId) => {
+            const text = document.getElementById(outputId).textContent;
             if (!text) return alert('請先產生貼文');
             navigator.clipboard.writeText(text).then(() => alert('已拷貝'));
+        };
+        
+        // 清洗電話號碼，只保留數字
+        const cleanPhone = () => {
+            const input = document.getElementById('phoneInput').value.trim();
+            if (!input) return alert('請輸入電話號碼');
+            
+            // 移除所有非數字字符
+            const cleaned = input.replace(/\D/g, '');
+            
+            document.getElementById('phoneOutput').textContent = cleaned;
         };
     </script>
 </body>
