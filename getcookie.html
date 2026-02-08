@@ -3,71 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>cURL Cookie Extractor</title>
+    <title>cURL Cookie Extractor | 快樂工具人</title>
     <style>
         * { box-sizing: border-box; }
-        body { font-family: system-ui, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
-        .container { max-width: 800px; margin: 0 auto; }
-        h1 { margin: 0 0 20px; font-size: 1.5em; }
-        label { display: block; font-weight: bold; margin-bottom: 5px; color: #333; }
-        label small { font-weight: normal; color: #666; }
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 20px; background: #f0f2f5; color: #1c1e21; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1 { margin: 0 0 20px; font-size: 1.6em; color: #1877f2; display: flex; align-items: center; gap: 10px; }
+        label { display: block; font-weight: 600; margin-bottom: 8px; color: #4b4f56; }
+        label small { font-weight: normal; color: #8d949e; margin-left: 5px; }
         textarea {
-            width: 100%; height: 100px; padding: 12px; border: 2px solid #ddd;
-            border-radius: 8px; font-family: monospace; font-size: 13px; resize: vertical;
-            transition: border-color .2s;
+            width: 100%; height: 120px; padding: 12px; border: 1px solid #dddfe2;
+            border-radius: 8px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; 
+            font-size: 13px; resize: vertical; transition: border-color .2s; background: #fff;
         }
-        textarea:focus { outline: none; border-color: #4a90d9; }
-        .btn-row { display: flex; gap: 10px; margin: 10px 0; flex-wrap: wrap; }
+        textarea:focus { outline: none; border-color: #1877f2; box-shadow: 0 0 0 2px rgba(24, 119, 242, 0.2); }
+        .btn-row { display: flex; gap: 10px; margin: 12px 0; flex-wrap: wrap; }
         button {
-            padding: 8px 16px; font-size: 13px; border: none; border-radius: 6px;
-            cursor: pointer; transition: all .2s;
+            padding: 10px 20px; font-size: 14px; border: none; border-radius: 6px;
+            cursor: pointer; transition: filter .2s, transform .1s; font-weight: 600;
         }
-        .btn-primary { background: #4a90d9; color: #fff; }
-        .btn-primary:hover { background: #357abd; }
-        .btn-secondary { background: #6c757d; color: #fff; }
-        .btn-secondary:hover { background: #545b62; }
-        .btn-success { background: #28a745; color: #fff; }
-        .btn-success:hover { background: #1e7e34; }
-        .btn-info { background: #17a2b8; color: #fff; }
-        .btn-info:hover { background: #138496; }
-        .output-wrap { position: relative; margin-top: 15px; }
-        .output-box { background: #fff; }
-        .output-box.success { border-color: #28a745; background: #f0fff4; }
-        .output-box.error { border-color: #dc3545; background: #fff5f5; }
-        .output-box.clean { border-color: #17a2b8; background: #f0fafc; }
+        button:active { transform: scale(0.98); }
+        .btn-primary { background: #1877f2; color: #fff; }
+        .btn-secondary { background: #e4e6eb; color: #050505; }
+        .btn-success { background: #42b72a; color: #fff; }
+        .btn-info { background: #00acc1; color: #fff; }
+        .output-wrap { position: relative; margin-top: 20px; background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #dddfe2; }
+        .output-box { background: #f5f6f7; cursor: pointer; }
+        .output-box.success { border-color: #42b72a; }
+        .output-box.error { border-color: #fa3e3e; background: #fff1f0; }
         .toast {
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-            background: #333; color: #fff; padding: 12px 24px; border-radius: 8px;
-            opacity: 0; transition: opacity .3s; pointer-events: none;
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.8); color: #fff; padding: 10px 24px; border-radius: 20px;
+            opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 1000; font-size: 14px;
         }
         .toast.show { opacity: 1; }
-        .hint { font-size: 12px; color: #666; margin-top: 5px; }
-        .ver { text-align: right; font-size: 11px; color: #999; margin-top: 20px; }
-        .stats { font-size: 12px; color: #666; margin: 5px 0; }
+        .hint { font-size: 13px; color: #606770; margin-top: 10px; padding: 0 5px; }
+        .stats { font-size: 12px; color: #1877f2; margin: 8px 0; font-weight: 600; }
+        .ver { text-align: right; font-size: 11px; color: #bcc0c4; margin-top: 30px; border-top: 1px solid #dddfe2; padding-top: 10px; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🍪 cURL Cookie Extractor</h1>
         
-        <label for="inputTXT">貼上 cURL 指令</label>
-        <textarea id="inputTXT" placeholder="支援 Chrome (-H 'cookie:') 及 Brave (-b) 格式..."></textarea>
+        <label for="inputTXT">貼上 cURL 指令 <small>(支援 Chrome/Brave/Edge 格式)</small></label>
+        <textarea id="inputTXT" placeholder="貼上包含 -H 'cookie: ...' 或 -b '...' 的完整 cURL 指令..."></textarea>
+        
         <div class="btn-row">
-            <button class="btn-primary" onclick="extractCookie()">擷取 Cookie</button>
-            <button class="btn-secondary" onclick="pasteFromClipboard()">📋 貼上</button>
+            <button class="btn-primary" onclick="extractCookie()">🚀 擷取 Cookie</button>
+            <button class="btn-secondary" onclick="pasteFromClipboard()">📋 貼上並執行</button>
             <button class="btn-secondary" onclick="clearAll()">🗑️ 清除</button>
         </div>
         
         <div class="output-wrap">
-            <label for="outputTXT">完整 Cookie</label>
+            <label for="outputTXT">完整內容 <small>(已修復雙引號截斷問題)</small></label>
             <textarea id="outputTXT" class="output-box" readonly placeholder="結果將顯示於此..."></textarea>
             <div class="btn-row">
-                <button class="btn-success" onclick="copyResult('outputTXT')">📋 複製</button>
+                <button class="btn-success" onclick="copyResult('outputTXT')">📋 複製完整版</button>
             </div>
         </div>
 
         <div class="output-wrap">
-            <label for="cleanTXT">排除追蹤器 <small>(移除 GA、Incapsula、91APP 等)</small></label>
+            <label for="cleanTXT">精簡內容 <small>(排除追蹤器與廣告標記)</small></label>
             <textarea id="cleanTXT" class="output-box" readonly placeholder="乾淨的 cookie 將顯示於此..."></textarea>
             <div class="stats" id="stats"></div>
             <div class="btn-row">
@@ -75,8 +72,8 @@
             </div>
         </div>
         
-        <p class="hint">💡 提示：貼上後自動擷取，點擊輸出框也會自動複製</p>
-        <p class="ver">ver=2025-05-28.002</p>
+        <p class="hint">💡 提示：點擊輸出框即可自動複製。針對 uniopen 改版，請確保 U= 欄位完整。</p>
+        <div class="ver">快樂工具人 - ver=2026-02-08.001</div>
     </div>
     
     <div class="toast" id="toast"></div>
@@ -87,23 +84,16 @@
         const $clean = document.getElementById('cleanTXT');
         const $stats = document.getElementById('stats');
         
-        // 追蹤器 cookie 模式
+        // 追蹤器關鍵字
         const TRACKERS = [
-            /^_ga/, /^_gid/, /^_gat/, /^_gcl/, /^_gac_/,  // Google Analytics
-            /^__utm/, /^__gads/, /^__gpi/,                 // Google Ads/UTM
-            /^visid_incap/, /^incap_ses/, /^nlbi_/,        // Incapsula/Imperva
-            /^_fbp$/, /^_fbc$/, /^fr$/,                    // Facebook
-            /^_tt_/, /^_ttp/,                              // TikTok
-            /^_pin_/,                                       // Pinterest
-            /^_li_/, /^li_/,                               // LinkedIn
-            /^91_/, /^91app/i,                             // 91APP
-            /^_clck/, /^_clsk/,                            // Microsoft Clarity
-            /^mp_/, /^mixpanel/,                           // Mixpanel
-            /^amplitude/i,                                 // Amplitude
-            /^ajs_/,                                       // Segment
-            /^hubspot/i, /^__hs/, /^__hstc/, /^__hssc/,    // HubSpot
-            /^intercom/i,                                  // Intercom
-            /^gaClientId$/                                 // GA 自訂
+            /^_ga/, /^_gid/, /^_gat/, /^_gcl/, /^_gac_/, /^_ga_/,
+            /^__utm/, /^__gads/, /^__gpi/, /^__hss/, /^__hst/,
+            /^visid_incap/, /^incap_ses/, /^nlbi_/,
+            /^_fbp$/, /^_fbc$/, /^fr$/,
+            /^_tt_/, /^_ttp/, /^_pin_/, /^_li_/, /^li_/,
+            /^91_/, /^91app/i, /^_clck/, /^_clsk/,
+            /^mp_/, /^mixpanel/, /^amplitude/i, /^ajs_/,
+            /^intercom/i, /^_uetsid/, /^_uetvid/
         ];
 
         function isTracker(name) {
@@ -111,77 +101,82 @@
         }
 
         $input.addEventListener('paste', () => setTimeout(extractCookie, 50));
-        $output.addEventListener('click', () => { if ($output.value && !$output.classList.contains('error')) copyResult('outputTXT'); });
-        $clean.addEventListener('click', () => { if ($clean.value) copyResult('cleanTXT'); });
+        $output.addEventListener('click', () => copyResult('outputTXT'));
+        $clean.addEventListener('click', () => copyResult('cleanTXT'));
 
         function extractCookie() {
             const text = $input.value;
-            const regex = /-H\s+['"](?:cookie|Cookie):\s*([^'"]+)['"]|-b\s+['"]([^'"]+)['"]/i;
+            // 關鍵：使用 \1 匹配成對的起始引號，(.*?) 非貪婪匹配內容
+            const regex = /(?:-H\s+['"](?:cookie|Cookie):\s*|-b\s+)(['"])(.*?)\1/i;
             const match = text.match(regex);
             
             $output.classList.remove('success', 'error');
-            $clean.classList.remove('clean');
             $stats.textContent = '';
             
-            if (!match || (!match[1] && !match[2])) {
-                $output.value = '找不到 cookie 參數';
+            if (!match || !match[2]) {
+                $output.value = '❌ 找不到 cookie 參數，請確認 cURL 格式是否正確';
                 $clean.value = '';
                 $output.classList.add('error');
                 return;
             }
 
-            const raw = match[1] || match[2];
-            $output.value = `cookie: ${raw}`;
+            const raw = match[2].trim();
+            // 移除開頭可能不小心抓到的 "cookie: " 字串（如果有的話）
+            const cleanRaw = raw.replace(/^cookie:\s*/i, '');
+            
+            $output.value = cleanRaw;
             $output.classList.add('success');
 
             // 解析並過濾
-            const cookies = raw.split(/;\s*/).filter(c => c.includes('='));
+            const cookies = cleanRaw.split(/;\s*/).filter(c => c.includes('='));
             const clean = [];
             const removed = [];
 
             cookies.forEach(c => {
-                const name = c.split('=')[0].trim();
-                if (isTracker(name)) { removed.push(name); return; }
-                clean.push(c);
+                const parts = c.split('=');
+                const name = parts[0].trim();
+                if (isTracker(name)) { 
+                    removed.push(name); 
+                } else {
+                    clean.push(c);
+                }
             });
 
-            $clean.value = clean.length ? `cookie: ${clean.join('; ')}` : '(全部都是追蹤器)';
-            $clean.classList.add('clean');
-            $stats.textContent = `原始 ${cookies.length} 個 → 保留 ${clean.length} 個，移除 ${removed.length} 個追蹤器`;
+            $clean.value = clean.join('; ');
+            $stats.textContent = `📊 原始: ${cookies.length} | 保留: ${clean.length} | 移除: ${removed.length}`;
         }
 
         async function pasteFromClipboard() {
             try {
                 $input.value = await navigator.clipboard.readText();
                 extractCookie();
-                toast('已貼上');
-            } catch { toast('無法存取剪貼簿', true); }
+                toast('📋 已自動貼上並解析');
+            } catch { 
+                toast('❌ 無法讀取剪貼簿', true); 
+            }
         }
 
         function copyResult(id) {
             const el = document.getElementById(id);
             if (!el.value || el.classList.contains('error')) return;
+            
             navigator.clipboard.writeText(el.value);
             el.select();
-            toast('已複製！');
+            toast('✅ 已複製到剪貼簿');
         }
 
         function clearAll() {
-            $input.value = '';
-            $output.value = '';
-            $clean.value = '';
-            $stats.textContent = '';
+            $input.value = ''; $output.value = ''; $clean.value = ''; $stats.textContent = '';
             $output.classList.remove('success', 'error');
-            $clean.classList.remove('clean');
             $input.focus();
         }
 
         function toast(msg, isError) {
             const t = document.getElementById('toast');
             t.textContent = msg;
-            t.style.background = isError ? '#dc3545' : '#333';
+            t.style.background = isError ? '#fa3e3e' : 'rgba(0,0,0,0.8)';
             t.classList.add('show');
-            setTimeout(() => t.classList.remove('show'), 1500);
+            setTimeout(() => t.classList.remove('show'), 2000);
         }
     </script>
 </body>
