@@ -1,11 +1,30 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-TW">
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ page.title }}</title>
     <link rel="shortcut icon" href="{{ site.baseurl }}/favicon.ico" type="image/x-icon">
+    <style>
+        body {
+            /* 極簡置中大法 */
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            text-align: center; /* 讓內容文字靠中 */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        /* 讓 Markdown 產生的圖片不要爆出去 */
+        img { max-width: 100%; height: auto; }
+        /* 如果你希望清單或程式碼區塊維持靠左，可以加這行 */
+        pre, ul, ol { text-align: left; display: inline-block; text-align: left; }
+    </style>
 </head>
 <body>
-    {{ content }}
+    <article>
+        {{ content }}
+    </article>
 </body>
 </html>
