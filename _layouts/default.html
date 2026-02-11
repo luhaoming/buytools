@@ -7,24 +7,29 @@
     <link rel="shortcut icon" href="{{ site.baseurl }}/favicon.ico" type="image/x-icon">
     <style>
         body {
-            /* 極簡置中大法 */
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 40px 20px;
-            text-align: center; /* 讓內容文字靠中 */
+            background-color: #f6f8fa; /* 淺灰色背景，凸顯中間區塊 */
+            margin: 0;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
             line-height: 1.6;
-            color: #333;
+            color: #24292e;
         }
-        /* 讓 Markdown 產生的圖片不要爆出去 */
+        /* 主容器：這塊會出現在畫面中間 */
+        .main-content {
+            max-width: 800px;    /* 限制最大寬度 */
+            margin: 40px auto;   /* 核心：上下留白，左右自動(置中) */
+            padding: 40px;
+            background-color: #ffffff; /* 文章白色背景 */
+            border: 1px solid #d1d5da;
+            border-radius: 6px;
+            text-align: left;    /* 內容維持靠左閱讀 */
+        }
         img { max-width: 100%; height: auto; }
-        /* 如果你希望清單或程式碼區塊維持靠左，可以加這行 */
-        pre, ul, ol { text-align: left; display: inline-block; text-align: left; }
+        code { background: #f3f3f3; padding: 2px 4px; border-radius: 3px; }
     </style>
 </head>
 <body>
-    <article>
+    <div class="main-content">
         {{ content }}
-    </article>
+    </div>
 </body>
 </html>
