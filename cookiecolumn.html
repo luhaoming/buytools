@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cookie欄位分析</title>
+<script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; padding: 20px; }
+.container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 12px; padding: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+h1 { font-size: 28px; color: #333; margin-bottom: 30px; display: flex; align-items: center; gap: 10px; }
+.icon { width: 36px; height: 36px; background: #ff9800; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+.section { margin-bottom: 30px; }
+.section-title { font-size: 16px; font-weight: 600; color: #333; margin-bottom: 10px; }
+.hint { font-size: 13px; color: #999; margin-left: 5px; }
+textarea { width: 100%; min-height: 200px; padding: 15px; font-family: 'Consolas', monospace; font-size: 13px; border: 1px solid #ddd; border-radius: 8px; background: #fafafa; resize: vertical; }
+textarea:focus { outline: none; border-color: #2196f3; background: white; }
+.buttons { display: flex; gap: 10px; margin-top: 10px; }
+button { padding: 10px 20px; border: none; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s; }
+.btn-primary { background: #2196f3; color: white; }
+.btn-primary:hover { background: #1976d2; }
+.btn-success { background: #4caf50; color: white; }
+.btn-success:hover { background: #45a049; }
+.btn-secondary { background: #f0f0f0; color: #666; }
+.btn-secondary:hover { background: #e0e0e0; }
+footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #999; font-size: 13px; }
+</style>
+</head>
+<body>
+<div id="app">
+<div class="container">
+<h1><span class="icon">🍪</span> Cookie欄位分析</h1>
+<div class="section">
+<div class="section-title">Input</div>
+<textarea v-model="input" placeholder="貼上 cookie"></textarea>
+<div class="buttons">
+<button class="btn-secondary" @click="clear">🗑️ 清除</button>
+</div>
+</div>
+
+<div class="section">
+<div class="section-title">Output <span class="hint">(已修復雙引號截斷問題)</span></div>
+<textarea :value="output" readonly></textarea>
+<div class="buttons">
+<button class="btn-success" @click="copy">📋 複製完整版</button>
+</div>
+</div>
+
+<footer>
+快樂工具人 © 2025 | ver=2025-02-12.004
+</footer>
+</div>
+</div>
+
+<script>
+const { createApp } = Vue;
+
+createApp({
+data() {
+return {
+input: ''
+};
+},
+computed: {
+output() {
+if (!this.input.trim()) return '';
+let cookie = this.input.trim();
+if (cookie.toLowerCase().startsWith('cookie:')) {
+cookie = cookie.slice(7).trim();
+}
+return cookie.split(';').map(item => item.trim()).filter(item => item).join('\n');
+}
+},
+methods: {
+clear() {
+this.input = '';
+},
+copy() {
+if (!this.output) return;
+navigator.clipboard.writeText(this.output);
+}
+}
+}).mount('#app');
+</script>
+</body>
+</html>
