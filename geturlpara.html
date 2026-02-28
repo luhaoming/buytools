@@ -3,159 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>URL 參數解析工具 | URL Parameter Decoder</title>
+    <title>URL 參數解析工具 | 快樂工具人</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&family=Roboto+Mono:wght@400&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Noto Sans TC', 'Roboto', sans-serif; background-color: #f8f8f8; color: #333; line-height: 1.6; margin: 0; padding: 40px 20px; display: flex; justify-content: center; min-height: 100vh; }
-        .container { width: 100%; max-width: 720px; background-color: #fff; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); padding: 30px; box-sizing: border-box; }
-        h2 { font-weight: 700; color: #2c3e50; text-align: center; margin-bottom: 25px; padding-bottom: 10px; border-bottom: 2px solid #a8d9ff; position: relative; }
-        h2::after { content: "URL Parameter Decoder"; font-size: 0.6em; color: #888; position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); white-space: nowrap; }
-        .input-group { display: flex; align-items: center; margin-bottom: 15px; }
-        .input-group label { flex-shrink: 0; width: 90px; font-weight: 700; color: #555; text-align: right; padding-right: 15px; }
-        input[type="text"], textarea { flex-grow: 1; padding: 10px 12px; border: 1px solid #dcdcdc; border-radius: 5px; font-size: 1rem; font-family: 'Roboto Mono', monospace; color: #444; background-color: #fcfcfc; box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.04); transition: border-color 0.2s ease, box-shadow 0.2s ease; resize: vertical; min-height: 40px; line-height: 1.5; }
-        input[type="text"]:focus, textarea:focus { border-color: #7abaff; box-shadow: 0 0 0 3px rgba(122, 186, 255, 0.2); outline: none; }
+        :root { --primary: #7abaff; --bg: #f8f8f8; --card: #fff; --text: #333; --border: #e0e0e0; --kv-bg: #fdf6e3; --kv-text: #856404; --btn-bg: #5a9bd5; }
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--bg); color: var(--text); line-height: 1.6; margin: 0; padding: 20px 15px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .container { width: 100%; max-width: 800px; background-color: var(--card); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); padding: 20px; box-sizing: border-box; }
+        h2 { font-weight: 700; color: #2c3e50; text-align: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid var(--primary); }
+        .input-group { display: flex; flex-direction: column; margin-bottom: 15px; gap: 5px; }
+        .input-row { display: flex; align-items: stretch; gap: 8px; }
+        label { font-weight: 700; color: #555; font-size: 0.9em; margin-left: 2px; }
+        input[type="text"], textarea { flex-grow: 1; padding: 12px; border: 1px solid #dcdcdc; border-radius: 8px; font-size: 1rem; font-family: 'Roboto Mono', monospace; background-color: #fcfcfc; transition: all 0.2s ease; resize: vertical; }
+        input:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(122, 186, 255, 0.2); outline: none; }
         input[readonly], textarea[readonly] { background-color: #f0f4f7; cursor: pointer; }
-        input[readonly]:hover, textarea[readonly]:hover { border-color: #b0d4ff; }
-        .long-key-container { padding: 15px; margin-bottom: 15px; border: 1px dashed #f0ad4e; border-radius: 4px; background-color: #fff8e1; }
-        .long-key-label { font-weight: 700; color: #ac6318; margin: 0 0 5px 0; padding-bottom: 5px; border-bottom: 1px dotted #f0ad4e; word-break: break-all; }
-        hr { border: none; border-top: 1px dashed #ccc; margin: 30px 0; }
-        #result-area { min-height: 100px; }
-        #initial-message { text-align: center; color: #777; font-style: italic; padding: 20px 0; }
-        h3 { font-weight: 700; color: #4a698a; margin-top: 30px; margin-bottom: 15px; border-left: 4px solid #7abaff; padding-left: 10px; }
-        .info-msg { text-align: center; color: #007bff; font-size: 0.9em; margin-top: 25px; padding: 10px; background-color: #eaf6ff; border-left: 5px solid #007bff; border-radius: 4px; }
-        .info-msg strong { color: #0056b3; }
-        .error-msg { color: #d9534f !important; background-color: #fef1f1; border-left-color: #d9534f; padding: 10px; border-radius: 4px; text-align: center; }
+        .btn-copy { flex-shrink: 0; padding: 0 15px; border: none; border-radius: 8px; background-color: var(--btn-bg); color: white; font-weight: 700; cursor: pointer; font-size: 0.85em; transition: background 0.2s; display: flex; align-items: center; justify-content: center; min-width: 60px; }
+        .btn-copy:active { background-color: #417cb4; transform: scale(0.98); }
+        .btn-copy.success { background-color: #28a745; }
+        .kv-mode { background-color: var(--kv-bg) !important; color: var(--kv-text) !important; border-color: #eee8d5 !important; }
+        .param-block { border-left: 4px solid var(--primary); padding: 12px; margin-bottom: 20px; background: #fafafa; border-radius: 0 8px 8px 0; }
+        .long-key-label { font-weight: 700; color: #ac6318; margin: 0 0 8px 0; border-bottom: 1px dotted #f0ad4e; word-break: break-all; font-size: 0.85em; padding-bottom: 4px; }
+        hr { border: none; border-top: 1px dashed #ccc; margin: 25px 0; }
+        #rA { min-height: 50px; }
+        .msg { text-align: center; color: #777; font-style: italic; padding: 10px 0; }
+        .error { color: #d9534f; background-color: #fef1f1; border: 1px solid #d9534f; padding: 10px; border-radius: 4px; text-align: center; }
+        footer { margin-top: 30px; color: #aaa; font-size: 0.8em; text-align: center; }
+        @media (min-width: 600px) { .input-group { flex-direction: row; align-items: flex-start; } label { width: 110px; text-align: right; padding-top: 12px; margin-right: 10px; } }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h2>URL 參數解析工具</h2>
-    
     <div class="input-group">
         <label for="uI">URL</label>
-        <input type="text" id="uI" 
-               placeholder="請在此輸入 URL (e.g., https://a.b.c.d/a.php?a=1&b=2&c=3)"
-               oninput="d()">
+        <div class="input-row" style="flex-grow: 1;">
+            <input type="text" id="uI" placeholder="貼上網址...">
+        </div>
     </div>
-
     <hr>
-    
-    <div id="rA">
-        <p id="initial-message">請輸入 URL，結果將會自動解析顯示。</p>
-    </div>
-
-    <p class="info-msg">
-        💡 **提示 (Hint):**<br>
-        **雙擊 (Double-Click)** 任何參數值輸入框即可複製到剪貼簿。
-    </p>
-
+    <div id="rA"><p class="msg">等待輸入中...</p></div>
 </div>
 
+<footer>快樂工具人 © 2026 | v2026-02-28.005</footer>
+
 <script>
-const L = 50; // 長度閾值 (Length Threshold)
+(function() {
+    const LIMIT = 50;
+    const inputEl = document.getElementById('uI');
+    const container = document.getElementById('rA');
 
-function iL(t) { return t.length > L; } // isTooLongForInput
-
-function cC(e) { // copyToClipboard
-    if (!e.value) { alert('此輸入欄位沒有值。'); return; }
-    e.select();
-    e.setSelectionRange(0, 99999); 
-    try {
-        document.execCommand('copy');
-        const v = e.value;
-        const b = e.style.backgroundColor;
-        e.value = '已複製! 🎉 (Copied!)';
-        e.style.backgroundColor = '#d4edda'; 
-        setTimeout(() => { e.value = v; e.style.backgroundColor = '#f0f4f7'; }, 800);
-    } catch (err) {
-        console.error('複製失敗:', err);
-        alert('抱歉，複製失敗，瀏覽器可能不支援。');
-    }
-}
-
-function gH(k, v) { // generateParamHtml
-    const iKL = iL(k); // is Key Long
-    const iVL = iL(v); // is Value Long
-    const t = iVL ? 'textarea' : 'input'; // tag
-    const ty = iVL ? '' : 'type="text"'; // type
-
-    if (iKL) {
-        // Key 太長：兩行模式
-        const vE = t === 'textarea' 
-            ? `<textarea readonly ondblclick="cC(this)">${v}</textarea>`
-            : `<input ${ty} value="${v}" readonly ondblclick="cC(this)">`;
-        
-        return `
-            <div class="long-key-container">
-                <p class="long-key-label">⚠️ **Key 太長警告！** Key: ${k}</p>
-                <div class="input-group" style="align-items: flex-start; margin-bottom: 0;">
-                    <label style="text-align: left; width: 90px; color: #ac6318;">Value</label>
-                    ${vE}
-                </div>
-            </div>
-        `;
-    }
-    
-    // Key 正常：單行模式
-    if (t === 'textarea') {
-        return `<div class="input-group">
-            <label>${k}</label>
-            <textarea readonly ondblclick="cC(this)">${v}</textarea>
-        </div>`;
-    }
-    
-    return `<div class="input-group">
-        <label>${k}</label>
-        <input ${ty} value="${v}" readonly 
-               ondblclick="cC(this)">
-    </div>`;
-}
-
-function d() { // decodeUrl
-    const uI = document.getElementById('uI'); // URL Input
-    const rA = document.getElementById('rA'); // Result Area
-    const uS = uI.value.trim(); // URL String
-    
-    rA.innerHTML = ''; 
-
-    if (!uS) {
-        rA.innerHTML = '<p id="initial-message">請輸入 URL，結果將會自動解析顯示。</p>';
-        return;
-    }
-
-    try {
-        const u = new URL(uS); // URL Object
-        const p = u.pathname; // Pathname
-        
-        // 1. 顯示 path
-        const pE = iL(p) ? 'textarea' : 'input'; // Path Element Tag
-        const pVA = pE === 'input' ? `value="${p}"` : ''; // Path Value Attribute
-        const pC = pE === 'textarea' ? p : ''; // Path Content
-        
-        rA.innerHTML += `<div class="input-group">
-            <label>路徑 (Path)</label>
-            <${pE} ${pVA} readonly 
-                   ondblclick="cC(this)">${pC}</${pE}>
-        </div>`;
-        
-        // 2. 顯示參數 (GET)
-        const params = u.searchParams;
-        if (params.size > 0) {
-            rA.innerHTML += '<h3>=== 參數列表 (Parameters List) ===</h3>';
-            params.forEach((v, k) => { rA.innerHTML += gH(k, v); }); // 遍歷並產生 HTML
-        } else if (u.search) {
-             rA.innerHTML += `<p>URL 包含查詢字串，但無法解析為標準 key=value 格式的參數。</p>`;
-        } else {
-             rA.innerHTML += `<p>此 URL 沒有 GET 參數。</p>`;
+    /** 核心複製邏輯 (含相容性處理) **/
+    async function execCopy(text) {
+        // 優先嘗試現代 API
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(text);
+            return true;
         }
         
-    } catch (error) {
-        rA.innerHTML = `<p class="error-msg">❌ 無效的 URL 格式 (Invalid URL Format)，請檢查。</p>`;
-        console.error('URL 解析錯誤:', error);
+        // 傳統 Fallback 模式
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed"; 
+        textArea.style.left = "-9999px";
+        textArea.style.top = "0";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        const successful = document.execCommand('copy');
+        document.body.removeChild(textArea);
+        return successful;
     }
-}
-</script>
 
+    /** 處理按鈕視覺狀態 **/
+    async function handleCopyAction(field, btn) {
+        const val = field.value;
+        if (!val) return;
+
+        const isOk = await execCopy(val);
+        if (!isOk) return; // 複製失敗就不跳狀態
+
+        const originalText = btn.innerText;
+        btn.innerText = 'OK!';
+        btn.classList.add('success');
+        const originalBg = field.style.backgroundColor;
+        field.style.backgroundColor = '#d4edda';
+        
+        setTimeout(() => {
+            btn.innerText = originalText;
+            btn.classList.remove('success');
+            field.style.backgroundColor = originalBg; 
+        }, 800);
+    }
+
+    function esc(t) {
+        return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    function createRowHtml(label, value, isKvMode = false) {
+        const isLong = value.length > LIMIT;
+        const tag = isLong ? 'textarea' : 'input';
+        const attr = isLong ? '' : `value="${esc(value)}"`;
+        const klass = isKvMode ? 'kv-mode' : '';
+        
+        return `
+            <div class="input-group">
+                <label>${esc(label)}</label>
+                <div class="input-row" style="flex-grow: 1;">
+                    <${tag} ${attr} readonly class="${klass}">${isLong ? esc(value) : ''}</${tag}>
+                    <button class="btn-copy" type="button">複製</button>
+                </div>
+            </div>`;
+    }
+
+    function buildParamBlock(k, v) {
+        const isKLong = k.length > LIMIT;
+        let html = `<div class="param-block">`;
+        if (isKLong) html += `<p class="long-key-label">長 Key 警告: ${esc(k)}</p>`;
+        html += createRowHtml(isKLong ? 'Value' : k, v);
+        html += createRowHtml('Key=Value', `${k}=${v}`, true);
+        html += `</div>`;
+        return html;
+    }
+
+    function handleInput() {
+        const raw = inputEl.value.trim();
+        if (!raw) {
+            container.innerHTML = '<p class="msg">等待輸入中...</p>';
+            return;
+        }
+
+        if (!URL.canParse(raw)) {
+            container.innerHTML = '<p class="error">❌ 無效的 URL 格式</p>';
+            return;
+        }
+
+        const url = new URL(raw);
+        let html = createRowHtml('路徑', url.pathname);
+
+        const params = url.searchParams;
+        if (params.size === 0) {
+            html += '<p class="msg">此網址沒有帶任何參數。</p>';
+            container.innerHTML = html;
+            attachEvents();
+            return;
+        }
+
+        html += '<h3 style="font-size:0.9em; color:#4a698a; margin: 15px 0 10px 0;">參數列表：</h3>';
+        params.forEach((v, k) => { html += buildParamBlock(k, v); });
+
+        container.innerHTML = html;
+        attachEvents();
+    }
+
+    function attachEvents() {
+        container.querySelectorAll('.input-row').forEach(row => {
+            const field = row.querySelector('input, textarea');
+            const btn = row.querySelector('.btn-copy');
+            if (!field || !btn) return;
+
+            btn.onclick = () => handleCopyAction(field, btn);
+            field.ondblclick = () => handleCopyAction(field, btn);
+        });
+    }
+
+    inputEl.oninput = handleInput;
+})();
+</script>
 </body>
 </html>
