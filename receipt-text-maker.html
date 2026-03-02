@@ -30,13 +30,15 @@
   .pillbar { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
   .output-box { background: #f1f5f9; border: 1px dashed #cbd5e0; margin: 8px 0; min-height: 44px; font-size: 16px; resize: none; }
   .hidden { display: none; }
+  .action-row { display: flex; gap: 8px; margin-top: 8px; }
+  .action-row button { flex: 1; }
 </style>
 </head>
 <body>
 
 <div class="navbar">
   <div class="brand">Receipt Text Maker</div>
-  <div class="version">v2.6</div>
+  <div class="version">ver=2026-03-02.001</div>
 </div>
 
 <div class="container">
@@ -46,6 +48,9 @@
       <button type="button" class="clear-btn" id="clearAll">清除</button>
     </div>
     <textarea id="raw" placeholder="貼上轉帳訊息..."></textarea>
+    <div class="action-row">
+      <button type="button" class="btn primary" id="parseBtn">執行</button>
+    </div>
     <div class="pillbar" id="candidates"></div>
   </div>
 
@@ -99,7 +104,7 @@ const render = () => {
   $("outBook").value = state.amount ? `${state.payer}${state.cat} , ${state.amount}` : "";
 };
 
-$("raw").oninput = () => {
+const parseInput = () => {
   const nums = [...new Set($("raw").value.match(/(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?/g) || [])];
   $("candidates").innerHTML = "";
   nums.forEach(n => {
@@ -118,6 +123,8 @@ $("raw").oninput = () => {
   });
   if (nums.length === 1) $("candidates").firstChild.click();
 };
+
+$("parseBtn").onclick = parseInput;
 
 $("clearAll").onclick = () => {
   $("raw").value = "";
@@ -159,8 +166,6 @@ async function doCopy(id, btn) {
 
 $("copyReply").onclick = function() { doCopy("outReply", this); };
 $("copyBook").onclick = function() { doCopy("outBook", this); };
-
-$("raw").oninput();
 </script>
 </body>
 </html>
