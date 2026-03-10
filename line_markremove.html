@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clean Text Maker</title>
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --primary-dark: #1a1f2c;
+            --border-color: #e9ecef;
+            --text-main: #333;
+            --accent-red: #dc3545;
+        }
+        body { font-family: -apple-system, "Microsoft JhengHei", sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .container { width: 100%; max-width: 800px; }
+        .header { display: flex; justify-content: space-between; align-items: center; background: var(--primary-dark); color: white; padding: 10px 20px; border-radius: 8px 8px 0 0; font-weight: bold; }
+        .version { font-size: 12px; opacity: 0.8; font-family: monospace; }
+        .card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        h3 { margin-top: 0; font-size: 16px; color: #555; display: flex; justify-content: space-between; align-items: center; }
+        textarea { width: 100%; height: 120px; border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; box-sizing: border-box; font-size: 16px; background-color: #fff; resize: vertical; }
+        .btn-main { width: 100%; background: var(--primary-dark); color: white; border: none; padding: 15px; border-radius: 8px; font-size: 18px; cursor: pointer; margin-top: 15px; transition: opacity 0.2s; }
+        .btn-main:active { opacity: 0.8; }
+        .btn-clear { background: none; border: 1px solid var(--accent-red); color: var(--accent-red); padding: 5px 15px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+        .output-box { background-color: #f1f4f9; border: 1px dashed #cbd5e0; min-height: 60px; padding: 15px; border-radius: 8px; word-break: break-all; white-space: pre-wrap; margin-bottom: 10px; }
+        .footer { text-align: center; font-size: 14px; color: #888; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <span>Clean Text Maker</span>
+            <span class="version">ver=2026-03-10.004</span>
+        </div>
+
+        <div class="card">
+            <h3>1. 貼上文字 <button class="btn-clear" onclick="clearInput()">清除</button></h3>
+            <textarea id="input" placeholder="貼上包含黑體星號與逗號的訊息..."></textarea>
+            <button class="btn-main" onclick="executeClean()">執行清理</button>
+        </div>
+
+        <div class="card">
+            <h3>2. 清理結果</h3>
+            <div id="output" class="output-box"></div>
+            <button class="btn-main" style="background: #fff; color: #1a1f2c; border: 1px solid #1a1f2c;" onclick="copyResult()">複製結果</button>
+        </div>
+
+        <div class="footer">
+            <strong>快樂工具人</strong>
+        </div>
+    </div>
+
+    <script>
+        function clearInput() {
+            document.getElementById('input').value = '';
+            document.getElementById('output').innerText = '';
+        }
+
+        function executeClean() {
+            const inputEl = document.getElementById('input');
+            const outputEl = document.getElementById('output');
+            
+            // Return Guard
+            if (!inputEl.value.trim()) return;
+
+            let text = inputEl.value;
+
+            // 邏輯處理
+            // 1. 移除千分位 (僅限數字間)
+            text = text.replace(/(\d),(\d)/g, '$1$2');
+            
+            // 2. 保護計算區星號 (數字*數字)
+            text = text.replace(/(\d)\*(\d)/g, '$1_TEMP_STAR_$2');
+            
+            // 3. 移除剩餘標記黑體的星號
+            text = text.replace(/\*/g, '');
+            
+            // 4. 還原計算星號
+            text = text.replace(/_TEMP_STAR_/g, '*');
+
+            outputEl.innerText = text.trim();
+        }
+
+        async function copyResult() {
+            const text = document.getElementById('output').innerText;
+            if (!text) return; // Return Guard
+
+            await navigator.clipboard.writeText(text);
+            alert('已複製到剪貼簿');
+        }
+    </script>
+</body>
+</html>
