@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>退款領據 - 快樂工具人</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        body { font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; background-color: #f4f4f4; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        #receipt-area { background: white; width: 842px; height: 595px; padding: 60px; box-sizing: border-box; box-shadow: 0 0 10px rgba(0,0,0,0.1); position: relative; }
+        h1 { text-align: center; letter-spacing: 10px; margin-bottom: 40px; }
+        .content { font-size: 22px; line-height: 1.8; margin-bottom: 40px; }
+        .info-row { font-size: 20px; margin: 15px 0; display: flex; align-items: center; }
+        .underline { border-bottom: 1px solid black; min-width: 250px; display: inline-block; cursor: pointer; min-height: 40px; vertical-align: bottom; padding: 0 10px; }
+        input { border: none; border-bottom: 1px solid black; font-size: 20px; outline: none; padding: 0 5px; }
+        
+        /* 彈出視窗樣式 */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 100; flex-direction: column; justify-content: center; align-items: center; }
+        #canvas { background: white; border-radius: 8px; box-shadow: 0 0 20px rgba(255,255,255,0.2); touch-action: none; }
+        .btn-group { margin-top: 20px; }
+        button { padding: 12px 30px; font-size: 18px; cursor: pointer; border-radius: 5px; border: none; margin: 0 10px; }
+        .btn-save { background: #28a745; color: white; }
+        .btn-clear { background: #dc3545; color: white; }
+        .btn-download { background: #007bff; color: white; margin-top: 20px; }
+        
+        .footer-note { position: absolute; bottom: 20px; right: 20px; font-size: 12px; color: #ccc; }
+    </style>
+</head>
+<body>
+
+<div id="receipt-area">
+    <h1>領據</h1>
+    <div class="content">
+        茲收到 <strong>陸浩銘</strong> 交付之現金，計新臺幣 <strong>捌萬</strong> 元整（NT$ 80,000），款項用途為：<strong>退還代購款項</strong>，確實無訛。
+    </div>
+    
+    <div class="info-row">此致 <strong>付款人：陸浩銘</strong></div>
+    <hr style="margin: 30px 0;">
+    
+    <div class="info-row">領收人（簽章）：<span id="signature-display" class="underline"></span></div>
+    <div class="info-row">身分證字號：<input type="text" placeholder="請輸入"></div>
+    <div class="info-row">聯絡電話：<input type="text" placeholder="請輸入"></div>
+    
+    <div class="info-row" style="margin-top: 40px; font-weight: bold;">
+        中 華 民 國 115 年 3 月 18 日
+    </div>
+    
+    <div class="footer-note">快樂工具人 2026-03-18.006</div>
+</div>
+
+<button class="btn-download" onclick="exportPDF()">輸出 PDF</button>
+
+<div id="modal" class="modal">
+    <h3 style="color:white">請於下方區域簽名</h3>
+    <canvas id="canvas" width="700" height="350"></canvas>
+    <div class="btn-group">
+        <button class="btn-clear" onclick="clearCanvas()">清除</button>
+        <button class="btn-save" onclick="saveSignature()">確認套用</button>
+    </div>
+</div>
+
+<script>
+    const modal = document.getElementById('modal');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const signatureDisplay = document.getElementById('signature-display');
+    let drawing = false;
+
+    // 點擊開啟簽名畫板
+    signatureDisplay.onclick = () => {
+        modal.style.display = 'flex';
+        clearCanvas();
+    };
+
+    // 取得座標
+    function getPos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return { x: clientX - rect.left, y: clientY - rect.top };
+    }
+
+    // 繪圖事件
+    function startDraw(e) { drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); }
+    function drawingEvent(e) {
+        if (!drawing) return;
+        const p = getPos(e);
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.lineTo(p.x, p.y);
+        ctx.stroke();
+    }
+    function stopDraw() { drawing = false; }
+
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', drawingEvent);
+    canvas.addEventListener('mouseup', stopDraw);
+    canvas.addEventListener('touchstart', startDraw);
+    canvas.addEventListener('touchmove', drawingEvent);
+    canvas.addEventListener('touchend', stopDraw);
+
+    function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+
+    function saveSignature() {
+        const dataURL = canvas.toDataURL();
+        const img = new Image();
+        img.src = dataURL;
+        img.style.maxHeight = '40px';
+        signatureDisplay.innerHTML = '';
+        signatureDisplay.appendChild(img);
+        modal.style.display = 'none';
+    }
+
+    function exportPDF() {
+        const element = document.getElementById('receipt-area');
+        const opt = {
+            margin: 0,
+            filename: '領據_陸浩銘.pdf',
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+        };
+        html2pdf().set(opt).from(element).save();
+    }
+</script>
+
+</body>
+</html>
