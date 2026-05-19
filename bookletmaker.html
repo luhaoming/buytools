@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bookmarklet 產生器 - 快樂工具人</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; color: #333; line-height: 1.6; }
+        h1 { border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; }
+        textarea { width: 100%; height: 200px; font-family: monospace; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        input[type="text"] { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        .checkbox-group { margin: 15px 0; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .result-box { margin-top: 30px; padding: 20px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 4px; display: none; }
+        .bookmark-link { display: inline-block; padding: 10px 20px; background: #28a745; color: white; text-decoration: none; border-radius: 4px; font-weight: bold; cursor: move; margin-bottom: 15px; }
+        .bookmark-link:hover { background: #218838; }
+        footer { margin-top: 5px; font-size: 12px; color: #666; text-align: right; border-top: 1px solid #eee; padding-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <h1>Bookmarklet 產生器</h1>
+    
+    <div class="form-group">
+        <label for="jsCode">輸入 JavaScript 原始碼：</label>
+        <textarea id="jsCode" placeholder="console.log('Hello World');"></textarea>
+    </div>
+
+    <div class="form-group">
+        <label for="linkName">書籤名稱：</label>
+        <input type="text" id="linkName" value="我的工具">
+    </div>
+
+    <div class="checkbox-group">
+        <label><input type="checkbox" id="includeJQuery"> 載入 jQuery (1.11.1)</label>
+    </div>
+
+    <div class="form-group">
+        <label for="customScript">載入自訂外部腳本網址 (選填)：</label>
+        <input type="text" id="customScript" placeholder="https://example.com/script.js">
+    </div>
+
+    <button onclick="generateBookmarklet()">轉換為書籤小工具</button>
+
+    <div id="result" class="result-box">
+        <h3>產生成功！</h3>
+        <p>請將下方按鈕<strong>直接拖曳</strong>到你的瀏覽器書籤列：</p>
+        <a id="outputLink" class="bookmark-link" href="#">書籤小工具</a>
+        
+        <label for="outputCode">書籤網址（純文字）：</label>
+        <input type="text" id="outputCode" readonly onclick="this.select()">
+    </div>
+
+    <footer>
+        快樂工具人 | 版本規範：2026-05-19.001
+    </footer>
+
+    <script>
+        function generateBookmarklet() {
+            const rawCode = document.getElementById('jsCode').value.trim();
+            const linkName = document.getElementById('linkName').value.trim() || '無標題工具';
+            const includeJQuery = document.getElementById('includeJQuery').checked;
+            const customScript = document.getElementById('customScript').value.trim();
+            
+            // Return Guard: 沒輸入程式碼就報警並中斷
+            if (!rawCode) {
+                alert('請輸入 JavaScript 程式碼！');
+                return;
+            }
+
+            let finalCode = rawCode;
+
+            // 處理自訂腳本載入
+            if (customScript) {
+                finalCode = `
+                    const script = document.createElement('script');
+                    script.src = '${customScript}';
+                    script.onload = () => { ${finalCode} };
+                    document.body.appendChild(script);
+                `;
+            }
+
+            // 處理 jQuery 載入 (Return Guard 概念：若有 jQuery 則直接執行)
+            if (includeJQuery) {
+                finalCode = `
+                    if (window.jQuery) {
+                        ${finalCode}
+                        return;
+                    }
+                    const jq = document.createElement('script');
+                    jq.src = 'https://code.jquery.com/jquery-1.11.1.min.js';
+                    jq.onload = () => {
+                        jQuery.noConflict();
+                        ${finalCode}
+                    };
+                    document.body.appendChild(jq);
+                `;
+            }
+
+            // 包裝成立即執行函式 (IIFE) 並進行 URL 編碼
+            const iifeCode = `(function(){${finalCode}})();`;
+            const bookmarkletUrl = 'javascript:' + encodeURIComponent(iifeCode);
+
+            // 更新 UI 顯示
+            const outputLink = document.getElementById('outputLink');
+            outputLink.href = bookmarkletUrl;
+            outputLink.innerText = linkName;
+
+            document.getElementById('outputCode').value = bookmarkletUrl;
+            document.getElementById('result').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
