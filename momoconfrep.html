@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Momo Config Replacer - ver=2026-06-01.001</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.global.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { 
+            background-color: #f6f8fa; 
+        }
+        .container {
+            max-width: 800px;
+            box-sizing: content-box;
+            margin: 40px auto !important;
+            padding: 40px;
+            background-color: #ffffff;
+            border: 1px solid #d1d5da;
+            border-radius: 6px;
+            text-align: left;
+        }
+        .output { white-space: pre-wrap; word-break: break-all; font-family: monospace; font-size: 12px; cursor: pointer; }
+        textarea { font-size: 12px; }
+        .card { margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .card-header { padding: 10px; font-weight: bold; background-color: #fff; font-size: 14px; }
+        .tool-title { border-left: 4px solid #0d6efd; padding-left: 10px; margin-bottom: 10px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div id="app" class="container">
+        <h4 class="tool-title">Momo Config Replacer (參數替換)</h4>
+        
+        <div class="card mb-3">
+            <div class="card-header">1. 貼上 Template (JSON)</div>
+            <div class="card-body">
+                <textarea class="form-control mb-2" rows="3" v-model="templateInput" placeholder='{"m_promo_no":"U96052300002","dt_promo_no":"D96052300001","gift_code":""}'></textarea>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header">2. 貼上 New Value (原始文字)</div>
+            <div class="card-body">
+                <textarea class="form-control mb-2" rows="6" v-model="newValueInput" placeholder="貼上抓取結果文字..."></textarea>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-primary btn-sm flex-grow-1" @click="generateResults" :disabled="!templateInput || !newValueInput">產生替換結果</button>
+                    <button class="btn btn-outline-danger btn-sm" @click="clearAll">清理</button>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="results.length > 0" class="mt-4">
+            <h5 class="mb-3">替換結果 (點擊內容複製)</h5>
+            <div v-for="(res, index) in results" :key="index" class="card mb-2">
+                <div class="card-header d-flex justify-content-between">
+                    <span>結果 #{{ index + 1 }} ({{ res.dt_promo_no }})</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="output bg-light p-2 border-0" @click="copyToClipboard(res.json)">{{ res.json }}</div>
+                </div>
+            </div>
+            
+            <div class="card mt-3">
+                <div class="card-header">批次輸出 (全部 JSON)</div>
+                <div class="card-body p-0">
+                    <div class="output bg-light p-2 border-0" @click="copyToClipboard(allResultsText)">{{ allResultsText }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="position-fixed bottom-0 start-50 translate-middle-x mb-3" style="z-index: 1050;">
+            <div v-if="clipboardMessage" class="badge bg-success p-2">{{ clipboardMessage }}</div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed } = Vue;
+        
+        createApp({
+            setup() {
+                const templateInput = ref('{"m_promo_no":"U96052300002","dt_promo_no":"D96052300001","gift_code":""}');
+                const newValueInput = ref('');
+                const results = ref([]);
+                const clipboardMessage = ref('');
+
+                const copyToClipboard = async (text) => {
+                    if (!text) return;
+                    try {
+                        await navigator.clipboard.writeText(text);
+                        clipboardMessage.value = '已複製！';
+                        setTimeout(() => clipboardMessage.value = '', 2000);
+                    } catch (err) {}
+                };
+
+                const generateResults = () => {
+                    try {
+                        const template = JSON.parse(templateInput.value);
+                        const content = newValueInput.value;
+
+                        // 抓取 mPromoNo
+                        const mMatch = content.match(/主活動代碼\s*\(mPromoNo\):\s*([A-Z0-9]+)/i);
+                        const mPromoNo = mMatch ? mMatch[1] : null;
+
+                        // 抓取多筆 dt_promo_no
+                        const dtRegex = /代碼:\s*([A-Z0-9]+)/gi;
+                        let dtMatches = [];
+                        let match;
+                        while ((match = dtRegex.exec(content)) !== null) {
+                            dtMatches.push(match[1]);
+                        }
+
+                        if (!mPromoNo || dtMatches.length === 0) {
+                            alert('找不到主活動代碼或時段代碼，請檢查輸入文字格式。');
+                            return;
+                        }
+
+                        results.value = dtMatches.map(dt => {
+                            const newObj = { ...template };
+                            newObj.m_promo_no = mPromoNo;
+                            newObj.dt_promo_no = dt;
+                            return {
+                                dt_promo_no: dt,
+                                json: JSON.stringify(newObj)
+                            };
+                        });
+
+                    } catch (error) {
+                        alert('JSON 模板格式錯誤：' + error.message);
+                    }
+                };
+
+                const allResultsText = computed(() => {
+                    return results.value.map(r => r.json).join('\n');
+                });
+
+                const clearAll = () => {
+                    newValueInput.value = '';
+                    results.value = [];
+                };
+
+                return {
+                    templateInput,
+                    newValueInput,
+                    results,
+                    allResultsText,
+                    generateResults,
+                    clearAll,
+                    clipboardMessage,
+                    copyToClipboard
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

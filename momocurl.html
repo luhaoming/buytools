@@ -7,7 +7,19 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.global.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { padding: 15px; background-color: #f8f9fa; }
+        body { 
+            background-color: #f6f8fa; 
+        }
+        .container {
+            max-width: 800px;
+            box-sizing: content-box;
+            margin: 40px auto !important;
+            padding: 40px;
+            background-color: #ffffff;
+            border: 1px solid #d1d5da;
+            border-radius: 6px;
+            text-align: left;
+        }
         .output { white-space: pre-wrap; word-break: break-all; font-family: monospace; font-size: 12px; cursor: pointer; }
         textarea { font-size: 12px; }
         .card { margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
@@ -17,7 +29,7 @@
     </style>
 </head>
 <body>
-    <div id="app" class="container-fluid">
+    <div id="app" class="container">
         <h4 class="tool-title">Momo Config Generator (主工具)</h4>
         <div class="card mb-4">
             <div class="card-body">
