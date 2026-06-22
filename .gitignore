@@ -1,0 +1,30 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*~
+
+# AI agent — IDE 本地設定與工作區暫存
+.cursor/
+.cursorrules
+.continue/
+.aider*
+.claude/settings.local.json
+
+# AI agent — 本地說明檔（不公開，僅供本機 AI 工具讀取）
+AGENTS.md
+CLAUDE.md
+AIAGENTS.md
+AGENT.md
+GEMINI.md
+CODEX.md
+.windsurfrules
+.clinerules
+
+# AI agent — 工具專用本地規則（若需納入版控請用 git add -f）
+.github/copilot-instructions.md
