@@ -2,6 +2,8 @@
 
 This document provides context and guidelines for AI assistants working with the Buytools codebase.
 
+> **Agent instructions:** See [AGENTS.md](AGENTS.md) for the canonical, tool-agnostic agent guide ([agents.md](https://agents.md/) open format).
+
 ## Project Overview
 
 **Buytools** (買工具) is a collection of standalone web-based utility tools for shopping, data processing, and productivity tasks. The project is hosted at `buy.sirii.cf` via GitHub Pages.

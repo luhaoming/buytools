@@ -119,7 +119,9 @@ body{font-family:"Hiragino Kaku Gothic ProN","Meiryo",system-ui,sans-serif;backg
           <option value=";">; (Semicolon)</option>
           <option value="\t">Tab</option>
           <option value="|">| (Pipe)</option>
+          <option value="ws2">␠␠+ (連續空白)</option>
         </select>
+        <span class="info-text">連續空白適用 column -t 對齊輸出；欄位內勿含空格</span>
       </div>
       <div class="checkbox-group" style="padding-bottom:10px">
         <input type="checkbox" id="hasHeaders" checked onchange="updateTable()">
@@ -179,7 +181,7 @@ body{font-family:"Hiragino Kaku Gothic ProN","Meiryo",system-ui,sans-serif;backg
   </div>
 </div>
 
-<div class="footer">快樂工具人 | CSV Column Sorter | ver=2026-03-17.001</div>
+<div class="footer">快樂工具人 | CSV Column Sorter | ver=2026-03-17.002</div>
 
 <script src="https://unpkg.com/tabulator-tables@5.5.2/dist/js/tabulator.min.js"></script>
 <script>
@@ -198,16 +200,32 @@ function processFile(file){
   reader.readAsText(file);
 }
 
+function countParsedCols(line,delim){
+  if(delim==='ws2') return line.trim().split(/\s{2,}/).filter(c=>c.length).length;
+  if(!line.includes(delim)) return 1;
+  return line.split(delim).length;
+}
+
 function detectDelimiter(text){
   const delims=[',',';','\t','|'];
   const lines=text.split('\n').slice(0,10).filter(l=>l.trim());
   if(!lines.length)return',';
   let max=0,best=',';
   delims.forEach(d=>{
-    const count=lines.map(l=>(l.match(new RegExp('\\'+d,'g'))||[]).length).reduce((a,b)=>a+b,0)/lines.length;
+    const re=new RegExp(d==='\t'?'\\t':'\\'+d,'g');
+    const count=lines.map(l=>(l.match(re)||[]).length).reduce((a,b)=>a+b,0)/lines.length;
     if(count>max){max=count;best=d;}
   });
+  const stdAvg=lines.map(l=>countParsedCols(l,best)).reduce((a,b)=>a+b,0)/lines.length;
+  const wsCols=lines.map(l=>countParsedCols(l,'ws2'));
+  const wsAvg=wsCols.reduce((a,b)=>a+b,0)/wsCols.length;
+  const wsConsistent=wsCols.every(c=>c===wsCols[0])&&wsCols[0]>=2;
+  if(wsConsistent&&wsAvg>stdAvg) return 'ws2';
   return best;
+}
+
+function parseWhitespaceAlignedLine(line){
+  return line.trim().split(/\s{2,}/).map(c=>c.trim()).filter(c=>c.length);
 }
 
 function parseCSV(text,delimiter){
@@ -219,22 +237,29 @@ function parseCSV(text,delimiter){
     lines=lines.filter(l=>!l.trim().startsWith(sym));
   }
   const rows=[];
-  for(const line of lines){
-    if(!line.trim())continue;
-    const row=[];
-    let cur='',inQ=false;
-    for(let i=0;i<line.length;i++){
-      const c=line[i],nc=i+1<line.length?line[i+1]:null;
-      if(c==='"'&&!inQ){inQ=true;}
-      else if(c==='"'&&inQ){
-        if(nc==='"'){cur+='"';i++;}
-        else if(nc===delimiter||nc===null||nc==='\r'){inQ=false;}
-        else{cur+='"';inQ=false;}
-      }else if(c===delimiter&&!inQ){row.push(cur);cur='';}
-      else{cur+=c;}
+  if(delimiter==='ws2'){
+    for(const line of lines){
+      if(!line.trim())continue;
+      rows.push(parseWhitespaceAlignedLine(line));
     }
-    row.push(cur);
-    rows.push(row);
+  }else{
+    for(const line of lines){
+      if(!line.trim())continue;
+      const row=[];
+      let cur='',inQ=false;
+      for(let i=0;i<line.length;i++){
+        const c=line[i],nc=i+1<line.length?line[i+1]:null;
+        if(c==='"'&&!inQ){inQ=true;}
+        else if(c==='"'&&inQ){
+          if(nc==='"'){cur+='"';i++;}
+          else if(nc===delimiter||nc===null||nc==='\r'){inQ=false;}
+          else{cur+='"';inQ=false;}
+        }else if(c===delimiter&&!inQ){row.push(cur);cur='';}
+        else{cur+=c;}
+      }
+      row.push(cur);
+      rows.push(row);
+    }
   }
   const maxCols=Math.max(...rows.map(r=>r.length));
   rows.forEach(r=>{while(r.length<maxCols)r.push('');});
@@ -410,7 +435,8 @@ function exportCSV(addBOM){
 function copyOutput(){
   if(!csvData.length)return;
   const hdrs=visibleColumns.map(i=>headers[i]);
-  const rows=csvData.map(r=>visibleColumns.map(i=>escapeCSV(r[i]||'')));
+  const rows=(table?table.getData('active'):csvData.map(r=>{const o={};visibleColumns.forEach(i=>o[`col${i}`]=r[i]||'');return o;}))
+    .map(o=>visibleColumns.map(i=>escapeCSV(o[`col${i}`]||'')));
   const content=[hdrs.map(escapeCSV).join(','),...rows.map(r=>r.join(','))].join('\n');
   navigator.clipboard.writeText(content).then(()=>alert('已複製結果！')).catch(()=>{
     const t=document.createElement('textarea');t.value=content;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);alert('已複製結果！');
