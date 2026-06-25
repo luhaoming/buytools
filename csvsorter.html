@@ -113,15 +113,17 @@ body{font-family:"Hiragino Kaku Gothic ProN","Meiryo",system-ui,sans-serif;backg
     <div class="options-main">
       <div class="form-group" style="flex:1;min-width:180px">
         <label>Delimiter</label>
-        <select id="delimiter" onchange="updateTable()">
+        <select id="delimiter" onchange="onDelimiterChange()">
           <option value="auto">Auto Detect</option>
           <option value=",">, (Comma)</option>
           <option value=";">; (Semicolon)</option>
           <option value="\t">Tab</option>
           <option value="|">| (Pipe)</option>
           <option value="ws2">␠␠+ (連續空白)</option>
+          <option value="custom">✏️ 自訂…</option>
         </select>
-        <span class="info-text">連續空白適用 column -t 對齊輸出；欄位內勿含空格</span>
+        <input type="text" id="customDelimiter" class="hidden" style="margin-top:6px" placeholder="輸入自訂分隔字元，例如 :: 或 \t" oninput="updateTable()">
+        <span class="info-text">連續空白適用 column -t 對齊輸出；欄位內勿含空格。自訂可用 \t（Tab）、\n、\\ 等跳脫字元</span>
       </div>
       <div class="checkbox-group" style="padding-bottom:10px">
         <input type="checkbox" id="hasHeaders" checked onchange="updateTable()">
@@ -181,7 +183,7 @@ body{font-family:"Hiragino Kaku Gothic ProN","Meiryo",system-ui,sans-serif;backg
   </div>
 </div>
 
-<div class="footer">快樂工具人 | CSV Column Sorter | ver=2026-03-17.002</div>
+<div class="footer">快樂工具人 | CSV Column Sorter | ver=2026-06-24.001</div>
 
 <script src="https://unpkg.com/tabulator-tables@5.5.2/dist/js/tabulator.min.js"></script>
 <script>
@@ -204,6 +206,18 @@ function countParsedCols(line,delim){
   if(delim==='ws2') return line.trim().split(/\s{2,}/).filter(c=>c.length).length;
   if(!line.includes(delim)) return 1;
   return line.split(delim).length;
+}
+
+function onDelimiterChange(){
+  const isCustom=document.getElementById('delimiter').value==='custom';
+  document.getElementById('customDelimiter').classList.toggle('hidden',!isCustom);
+  if(isCustom)document.getElementById('customDelimiter').focus();
+  updateTable();
+}
+
+function unescapeDelimiter(s){
+  if(s==null)return s;
+  return s.replace(/\\(t|n|r|\\)/g,(m,c)=>c==='t'?'\t':c==='n'?'\n':c==='r'?'\r':'\\');
 }
 
 function detectDelimiter(text){
@@ -243,18 +257,22 @@ function parseCSV(text,delimiter){
       rows.push(parseWhitespaceAlignedLine(line));
     }
   }else{
+    const dlen=delimiter.length;
     for(const line of lines){
       if(!line.trim())continue;
       const row=[];
       let cur='',inQ=false;
       for(let i=0;i<line.length;i++){
-        const c=line[i],nc=i+1<line.length?line[i+1]:null;
+        const c=line[i];
+        const matchDelim=!inQ&&dlen>0&&line.substr(i,dlen)===delimiter;
         if(c==='"'&&!inQ){inQ=true;}
         else if(c==='"'&&inQ){
+          const nc=i+1<line.length?line[i+1]:null;
+          const ncIsDelim=dlen>0&&line.substr(i+1,dlen)===delimiter;
           if(nc==='"'){cur+='"';i++;}
-          else if(nc===delimiter||nc===null||nc==='\r'){inQ=false;}
+          else if(ncIsDelim||nc===null||nc==='\r'){inQ=false;}
           else{cur+='"';inQ=false;}
-        }else if(c===delimiter&&!inQ){row.push(cur);cur='';}
+        }else if(matchDelim){row.push(cur);cur='';i+=dlen-1;}
         else{cur+=c;}
       }
       row.push(cur);
@@ -313,7 +331,10 @@ function updateTable(){
   }
   try{
     const dOpt=document.getElementById('delimiter').value;
-    const delim=dOpt==='auto'?detectDelimiter(text):dOpt;
+    let delim;
+    if(dOpt==='auto'){delim=detectDelimiter(text);}
+    else if(dOpt==='custom'){delim=unescapeDelimiter(document.getElementById('customDelimiter').value)||',';}
+    else{delim=unescapeDelimiter(dOpt);}
     let rows=parseCSV(text,delim);
     if(!rows.length)throw new Error('No data found');
 
