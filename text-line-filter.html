@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="version" content="1.1.20260803">
+<title>Text Line Filter | 文字行篩選器</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Microsoft JhengHei","Noto Sans TC",system-ui,sans-serif;background:#fafafa;color:#333;min-height:100vh}
+.header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);padding:20px;text-align:center;box-shadow:0 2px 10px rgba(102,126,234,.3)}
+.header h1{color:#fff;font-size:1.4em;font-weight:500;letter-spacing:2px}
+.header p{color:rgba(255,255,255,.8);font-size:12px;margin-top:5px}
+.main{max-width:1600px;margin:0 auto;padding:20px}
+.card{background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.08);margin-bottom:15px;overflow:hidden}
+.card-header{background:#2c3e50;color:#fff;padding:12px 15px;border-bottom:1px solid #eee;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
+.card-header::before{content:"";display:inline-block;width:4px;height:16px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:2px}
+.badge{display:inline-block;background:#667eea;color:#fff;font-size:10px;padding:2px 6px;border-radius:10px;margin-left:3px}
+.card-body{padding:15px}
+.filter-row{display:grid;grid-template-columns:minmax(240px,1fr) auto;gap:18px;align-items:end}
+.input-group label,.group-label{display:block;font-size:12px;color:#666;margin-bottom:6px;font-weight:500}
+input[type="text"]{width:100%;height:38px;padding:8px 11px;border:1px solid #e0e0e0;border-radius:6px;font-family:"SF Mono","Monaco","Inconsolata",monospace;font-size:13px;transition:border-color .2s,box-shadow .2s}
+input[type="text"]:focus,textarea:focus{outline:none;border-color:#667eea;box-shadow:0 0 0 3px rgba(102,126,234,.1)}
+.options{display:flex;gap:18px;align-items:center;min-height:38px;padding:0 3px}
+.check-label{display:inline-flex;align-items:center;gap:7px;color:#555;font-size:12px;white-space:nowrap;cursor:pointer;user-select:none}
+.check-label input{width:15px;height:15px;accent-color:#667eea}
+.text-grid{display:grid;grid-template-columns:1fr;gap:16px}
+.text-group{min-width:0}
+.text-group-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.text-group-header label{font-size:12px;color:#666;font-weight:500}
+.line-count{font-size:11px;color:#999}
+textarea{width:100%;padding:12px;border:1px solid #e0e0e0;border-radius:6px;font-family:"SF Mono","Monaco","Inconsolata",monospace;font-size:12px;line-height:1.5;resize:vertical;background:#1e1e1e;color:#d4d4d4;transition:border-color .2s,box-shadow .2s}
+#sourceText{height:180px}
+#resultText{height:430px}
+textarea::placeholder{color:#777}
+textarea[readonly]{background:#20242a;color:#d7f5dd}
+.btn-group{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;padding:15px;border-top:1px solid #eee}
+.btn{padding:8px 20px;border:none;border-radius:6px;font-family:inherit;font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;box-shadow:0 2px 8px rgba(102,126,234,.3)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(102,126,234,.4)}
+.btn-secondary{background:#fff;color:#666;border:1px solid #ddd}
+.btn-secondary:hover{background:#f5f5f5;border-color:#ccc}
+.btn:focus-visible{outline:3px solid rgba(102,126,234,.25);outline-offset:2px}
+.stats{text-align:center;padding:12px;background:#f8f9fa;border-radius:6px;margin-bottom:15px;min-height:44px}
+.stats-item{display:inline-block;margin:0 15px;font-size:13px}
+.stats-num{font-weight:700;margin-right:4px;color:#667eea}
+.stats-num.match{color:#22863a}
+.stats-num.skip{color:#cb2431}
+.hint{color:#888;font-size:12px;line-height:20px}
+.status{height:18px;margin-top:8px;color:#667eea;font-size:11px}
+.footer{text-align:center;padding:20px;color:#aaa;font-size:11px}
+@media(max-width:760px){
+  .main{padding:12px}
+  .filter-row{grid-template-columns:1fr}
+  .options{flex-wrap:wrap;gap:10px 18px}
+  #sourceText{height:160px}
+  #resultText{height:320px}
+  .stats-item{margin:0 7px}
+}
+</style>
+</head>
+<body>
+<header class="header">
+  <h1>Text Line Filter</h1>
+  <p>純前端文字行篩選・資料不會上傳伺服器</p>
+</header>
+
+<main class="main">
+  <section class="card">
+    <div class="card-header">篩選條件<span class="badge">FILTER</span></div>
+    <div class="card-body">
+      <div class="filter-row">
+        <div class="input-group">
+          <label for="filterText">篩選文字</label>
+          <input id="filterText" type="text" placeholder="例如：error、milk、訂單編號" autocomplete="off">
+        </div>
+        <div>
+          <span class="group-label">選項</span>
+          <div class="options">
+            <label class="check-label"><input id="ignoreCase" type="checkbox" checked>忽略大小寫</label>
+            <label class="check-label"><input id="excludeMatches" type="checkbox">排除符合的行</label>
+          </div>
+        </div>
+      </div>
+      <div class="status" id="status" role="status" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-header">文字內容</div>
+    <div class="card-body">
+      <div class="text-grid">
+        <div class="text-group">
+          <div class="text-group-header">
+            <label for="sourceText">原始文字（貼上後自動篩選）</label>
+            <span class="line-count" id="sourceCount">0 行</span>
+          </div>
+          <textarea id="sourceText" spellcheck="false" placeholder="請貼上要篩選的文字，每行一筆資料..."></textarea>
+        </div>
+        <div class="text-group">
+          <div class="text-group-header">
+            <label for="resultText">篩選結果</label>
+            <span class="line-count" id="resultCount">0 行</span>
+          </div>
+          <textarea id="resultText" readonly spellcheck="false" placeholder="符合條件的文字會顯示在這裡..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-secondary" id="copyButton" type="button">複製結果</button>
+      <button class="btn btn-secondary" id="sampleButton" type="button">載入範例</button>
+      <button class="btn btn-secondary" id="clearButton" type="button">全部清除</button>
+    </div>
+  </section>
+
+  <div class="stats" id="stats">
+    <span class="hint">貼上文字或變更篩選條件後，結果會自動更新。</span>
+  </div>
+</main>
+
+<footer class="footer">ver=1.1.20260803 | Pure JavaScript Implementation</footer>
+
+<script>
+const sourceText = document.getElementById('sourceText');
+const resultText = document.getElementById('resultText');
+const filterText = document.getElementById('filterText');
+const ignoreCase = document.getElementById('ignoreCase');
+const excludeMatches = document.getElementById('excludeMatches');
+const sourceCount = document.getElementById('sourceCount');
+const resultCount = document.getElementById('resultCount');
+const status = document.getElementById('status');
+const stats = document.getElementById('stats');
+
+function getLines(text) {
+  return text === '' ? [] : text.replace(/\r\n?/g, '\n').split('\n');
+}
+
+function updateCounts() {
+  sourceCount.textContent = `${getLines(sourceText.value).length} 行`;
+  resultCount.textContent = `${getLines(resultText.value).length} 行`;
+}
+
+function filterLines() {
+  const keyword = filterText.value;
+  const lines = getLines(sourceText.value);
+
+  if (keyword === '') {
+    resultText.value = '';
+    status.textContent = '請先輸入篩選文字。';
+    stats.innerHTML = '<span class="hint">尚未執行篩選。</span>';
+    updateCounts();
+    return;
+  }
+
+  const normalizedKeyword = ignoreCase.checked ? keyword.toLocaleLowerCase() : keyword;
+  let matchedCount = 0;
+  const output = lines.filter(line => {
+    const candidate = ignoreCase.checked ? line.toLocaleLowerCase() : line;
+    const matched = candidate.includes(normalizedKeyword);
+    if (matched) matchedCount++;
+    return excludeMatches.checked ? !matched : matched;
+  });
+
+  resultText.value = output.join('\n');
+  const skippedCount = lines.length - output.length;
+  stats.innerHTML = `
+    <span class="stats-item"><span class="stats-num">${lines.length}</span>原始行數</span>
+    <span class="stats-item"><span class="stats-num match">${matchedCount}</span>符合條件</span>
+    <span class="stats-item"><span class="stats-num skip">${skippedCount}</span>未輸出</span>
+    <span class="stats-item"><span class="stats-num">${output.length}</span>結果行數</span>`;
+  status.textContent = output.length ? '篩選完成。' : '篩選完成，沒有符合輸出條件的內容。';
+  updateCounts();
+}
+
+async function copyResult() {
+  if (resultText.value === '') {
+    status.textContent = '目前沒有可複製的結果。';
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(resultText.value);
+  } catch (error) {
+    resultText.select();
+    document.execCommand('copy');
+    window.getSelection().removeAllRanges();
+  }
+  status.textContent = '篩選結果已複製。';
+}
+
+function loadSample() {
+  sourceText.value = [
+    'I bought 3 liters of milk on Sunday.',
+    'Then, I bought 2 kgs of apples while returning home.',
+    'I bought one liter of Milk on Monday.',
+    'Then, I bought 1 kg of oranges while returning home.',
+    'I bought 2 liters of milk on Tuesday.'
+  ].join('\n');
+  filterText.value = 'milk';
+  ignoreCase.checked = true;
+  excludeMatches.checked = false;
+  filterLines();
+}
+
+function clearAll() {
+  sourceText.value = '';
+  resultText.value = '';
+  filterText.value = '';
+  ignoreCase.checked = true;
+  excludeMatches.checked = false;
+  status.textContent = '';
+  stats.innerHTML = '<span class="hint">貼上文字或變更篩選條件後，結果會自動更新。</span>';
+  updateCounts();
+  sourceText.focus();
+}
+
+document.getElementById('copyButton').addEventListener('click', copyResult);
+document.getElementById('sampleButton').addEventListener('click', loadSample);
+document.getElementById('clearButton').addEventListener('click', clearAll);
+sourceText.addEventListener('input', filterLines);
+filterText.addEventListener('input', filterLines);
+ignoreCase.addEventListener('change', filterLines);
+excludeMatches.addEventListener('change', filterLines);
+
+sourceText.addEventListener('paste', () => {
+  status.textContent = '正在處理貼上的文字...';
+});
+
+updateCounts();
+</script>
+</body>
+</html>
