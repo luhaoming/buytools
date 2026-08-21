@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>線上記事本 - Windows 11 風格</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            winBg: 'var(--win-bg)',
+            winHeader: 'var(--win-header-bg)',
+            winPanel: 'var(--win-panel)',
+            winCard: 'var(--win-card)',
+            winCardHover: 'var(--win-card-hover)',
+            winBorder: 'var(--win-border)',
+            winAccent: 'var(--win-accent)',
+            winAccentHover: 'var(--win-accent-hover)',
+            winText: 'var(--win-text)',
+            winMuted: 'var(--win-muted)',
+            winEditor: 'var(--win-editor-bg)',
+            winToolbar: 'var(--win-toolbar-bg)',
+            winDropdown: 'var(--win-dropdown-bg)'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --win-bg: #f3f3f3;
+      --win-header-bg: #e8e8e8;
+      --win-panel: #f9f9f9;
+      --win-card: #e5e5e5;
+      --win-card-hover: #d8d8d8;
+      --win-border: #d0d0d0;
+      --win-text: #1c1c1c;
+      --win-muted: #646464;
+      --win-editor-bg: #ffffff;
+      --win-toolbar-bg: #eaeaea;
+      --win-dropdown-bg: #ffffff;
+      --win-accent: #0078d4;
+      --win-accent-hover: #106ebe;
+    }
+
+    html.dark {
+      --win-bg: #1f1f1f;
+      --win-header-bg: #181818;
+      --win-panel: #202020;
+      --win-card: #2c2c2c;
+      --win-card-hover: #383838;
+      --win-border: #3f3f3f;
+      --win-text: #e3e3e3;
+      --win-muted: #9e9e9e;
+      --win-editor-bg: #191919;
+      --win-toolbar-bg: #1a1a1a;
+      --win-dropdown-bg: #2c2c2c;
+    }
+
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--win-bg);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--win-border);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--win-card-hover);
+    }
+
+    .editor-content {
+      outline: none;
+      caret-color: #0078d4;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      font-family: 'Consolas', 'Cascadia Code', 'Courier New', monospace;
+    }
+
+    .editor-content h1 { font-size: 1.8em; font-weight: bold; margin-bottom: 0.3em; }
+    .editor-content h2 { font-size: 1.4em; font-weight: bold; margin-bottom: 0.25em; }
+    .editor-content h3 { font-size: 1.2em; font-weight: bold; margin-bottom: 0.2em; }
+    .editor-content ul { list-style-type: disc; margin-left: 1.5rem; }
+    .editor-content ol { list-style-type: decimal; margin-left: 1.5rem; }
+    .editor-content strike { text-decoration: line-through; }
+    .editor-content a { color: #0078d4; text-decoration: underline; cursor: pointer; }
+
+    .line-numbers {
+      font-family: 'Consolas', 'Cascadia Code', 'Courier New', monospace;
+      user-select: none;
+      text-align: right;
+      color: var(--win-muted);
+      border-right: 1px solid var(--win-border);
+      padding-right: 8px;
+      margin-right: 12px;
+    }
+
+    .dropdown-menu {
+      display: none;
+      position: absolute;
+      z-index: 50;
+      background-color: var(--win-dropdown-bg);
+      border: 1px solid var(--win-border);
+      border-radius: 6px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    }
+    .dropdown-menu.show {
+      display: block;
+    }
+  </style>
+</head>
+<body class="bg-winBg text-winText h-screen flex flex-col select-none overflow-hidden font-sans transition-colors duration-200">
+
+  <header class="bg-winHeader border-b border-winBorder flex items-center justify-between px-2 pt-1">
+    <div class="flex items-center space-x-1 overflow-x-auto no-scrollbar max-w-[80vw]" id="tab-container">
+      <!-- Tabs rendered via JS -->
+    </div>
+    
+    <div class="flex items-center space-x-1 px-2 pb-1">
+      <button id="add-tab-btn" title="新增分頁 (Ctrl+N)" class="p-1.5 hover:bg-winCard rounded-md text-winMuted hover:text-winText transition">
+        <i class="fa-solid fa-plus text-xs"></i>
+      </button>
+      <div class="h-4 w-[1px] bg-winBorder mx-1"></div>
+      <button id="btn-help-modal" title="快捷鍵說明" class="p-1.5 hover:bg-winCard rounded-md text-winMuted hover:text-winText transition">
+        <i class="fa-solid fa-circle-question text-xs"></i>
+      </button>
+      <button id="btn-theme-toggle" title="切換深淺模式" class="p-1.5 hover:bg-winCard rounded-md text-winMuted hover:text-winText transition">
+        <i id="theme-icon" class="fa-solid fa-moon text-xs"></i>
+      </button>
+      <button id="btn-settings-toggle" title="設定" class="p-1.5 hover:bg-winCard rounded-md text-winMuted hover:text-winText transition">
+        <i class="fa-solid fa-gear text-xs"></i>
+      </button>
+    </div>
+  </header>
+
+  <div class="bg-winPanel border-b border-winBorder flex flex-wrap items-center justify-between px-3 py-1 gap-2 text-sm relative">
+    
+    <div class="flex items-center space-x-2 flex-wrap">
+      <!-- File Menu -->
+      <div class="relative">
+        <button id="menu-file-btn" class="px-2.5 py-1 hover:bg-winCard rounded text-xs transition">檔案</button>
+        <div id="menu-file-dropdown" class="dropdown-menu top-full left-0 mt-1 w-48 py-1">
+          <button id="action-new" class="w-full text-left px-4 py-1.5 hover:bg-winBorder text-xs flex justify-between items-center">
+            <span><i class="fa-regular fa-file mr-2"></i>新增分頁</span>
+            <span class="text-winMuted text-[10px]">Ctrl+N</span>
+          </button>
+          <button id="action-open" class="w-full text-left px-4 py-1.5 hover:bg-winBorder text-xs flex justify-between items-center">
+            <span><i class="fa-regular fa-folder-open mr-2"></i>開啟舊檔...</span>
+            <span class="text-winMuted text-[10px]">Ctrl+O</span>
+          </button>
+          <button id="action-save" class="w-full text-left px-4 py-1.5 hover:bg-winBorder text-xs flex justify-between items-center">
+            <span><i class="fa-regular fa-floppy-disk mr-2"></i>儲存</span>
+            <span class="text-winMuted text-[10px]">Ctrl+S</span>
+          </button>
+          <button id="action-save-as" class="w-full text-left px-4 py-1.5 hover:bg-winBorder text-xs flex justify-between items-center">
+            <span><i class="fa-solid fa-file-export mr-2"></i>另存新檔...</span>
+            <span class="text-winMuted text-[10px]">Ctrl+Shift+S</span>
+          </button>
+          <div class="border-t border-winBorder my-1"></div>
+          <button id="action-clear" class="w-full text-left px-4 py-1.5 hover:bg-red-900/40 text-red-400 text-xs flex items-center">
+            <i class="fa-regular fa-trash-can mr-2"></i>清空內容
+          </button>
+        </div>
+      </div>
+
+      <!-- Edit Menu -->
+      <div class="relative">
+        <button id="menu-edit-btn" class="px-2.5 py-1 hover:bg-winCard rounded text-xs transition">編輯</button>
+        <div id="menu-edit-dropdown" class="dropdown-menu top-full left-0 mt-1 w-48 py-1">
+          <button id="action-undo" class="w-full text-left px-4 py-1.5 hover:bg-winBorder text-xs flex justify-between items-center">
+            <span><i class="fa-solid fa-rotate-left mr-2"></i>復原</span>
+            <span class="text-winMuted text-[10px]">Ctrl+Z</span>
+          </button>
+          <button id="action-redo" class="w-full text-left px-4 py-1.5 hover:bg-winBorder text-xs flex justify-between items-center">
+            <span><i class="fa-solid fa-rotate-right mr-2"></i>重做</span>
+            <span class="text-winMuted text-[10px]">Ctrl+Y</span>
+          </button>
+          <div class="border-t border-winBorder my-1"></div>
+          <button id="action-find" class="w-full text-left px-4 py-1.5 hover:bg-winBorder text-xs flex justify-between items-center">
+            <span><i class="fa-solid fa-magnifying-glass mr-2"></i>尋找與取代</span>
+            <span class="text-winMuted text-[10px]">Ctrl+F</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- View Menu -->
+      <div class="relative">
+        <button id="menu-view-btn" class="px-2.5 py-1 hover:bg-winCard rounded text-xs transition">檢視</button>
+        <div id="menu-view-dropdown" class="dropdown-menu top-full left-0 mt-1 w-48 py-1">
+          <button id="action-toggle-line-numbers" class="w-full text-left px-4 py-1.5 hover:bg-winBorder text-xs flex items-center justify-between">
+            <span><i class="fa-solid fa-list-ol mr-2"></i>顯示行號</span>
+            <i id="line-num-check-icon" class="fa-solid fa-check text-xs text-winAccent"></i>
+          </button>
+          <button id="action-toggle-wrap" class="w-full text-left px-4 py-1.5 hover:bg-winBorder text-xs flex items-center justify-between">
+            <span><i class="fa-solid fa-align-left mr-2"></i>自動換行</span>
+            <i id="wrap-check-icon" class="fa-solid fa-check text-xs text-winAccent"></i>
+          </button>
+          <div class="border-t border-winBorder my-1"></div>
+          <button id="action-zoom-in" class="w-full text-left px-4 py-1.5 hover:bg-winBorder text-xs flex justify-between">
+            <span><i class="fa-solid fa-magnifying-glass-plus mr-2"></i>放大</span>
+            <span class="text-winMuted text-[10px]">Ctrl++</span>
+          </button>
+          <button id="action-zoom-out" class="w-full text-left px-4 py-1.5 hover:bg-winBorder text-xs flex justify-between">
+            <span><i class="fa-solid fa-magnifying-glass-minus mr-2"></i>縮小</span>
+            <span class="text-winMuted text-[10px]">Ctrl+-</span>
+          </button>
+          <button id="action-zoom-reset" class="w-full text-left px-4 py-1.5 hover:bg-winBorder text-xs flex justify-between">
+            <span><i class="fa-solid fa-compress mr-2"></i>重設縮放</span>
+            <span class="text-winMuted text-[10px]">Ctrl+0</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Help Menu -->
+      <div class="relative">
+        <button id="menu-help-btn" class="px-2.5 py-1 hover:bg-winCard rounded text-xs transition">說明</button>
+        <div id="menu-help-dropdown" class="dropdown-menu top-full left-0 mt-1 w-48 py-1">
+          <button id="action-shortcuts" class="w-full text-left px-4 py-1.5 hover:bg-winBorder text-xs flex items-center">
+            <i class="fa-solid fa-keyboard mr-2"></i>快捷鍵說明
+          </button>
+          <button id="action-about" class="w-full text-left px-4 py-1.5 hover:bg-winBorder text-xs flex items-center">
+            <i class="fa-solid fa-circle-info mr-2"></i>關於記事本
+          </button>
+        </div>
+      </div>
+
+      <div class="h-4 w-[1px] bg-winBorder my-auto mx-1"></div>
+
+      <!-- Formatting Controls Bar -->
+      <div class="flex items-center space-x-1 bg-winToolbar px-2 py-0.5 rounded border border-winBorder/60">
+        <select id="format-heading" class="bg-transparent text-xs text-winText outline-none hover:bg-winCard p-1 rounded cursor-pointer">
+          <option value="p" class="bg-winDropdown text-winText">一般段落</option>
+          <option value="h1" class="bg-winDropdown text-winText">標題 H1</option>
+          <option value="h2" class="bg-winDropdown text-winText">標題 H2</option>
+          <option value="h3" class="bg-winDropdown text-winText">標題 H3</option>
+        </select>
+
+        <div class="h-3 w-[1px] bg-winBorder"></div>
+
+        <button id="btn-list-ul" title="項目符號清單" class="p-1 hover:bg-winCard rounded text-winMuted hover:text-winText transition">
+          <i class="fa-solid fa-list-ul text-xs"></i>
+        </button>
+        <button id="btn-list-ol" title="編號清單" class="p-1 hover:bg-winCard rounded text-winMuted hover:text-winText transition">
+          <i class="fa-solid fa-list-ol text-xs"></i>
+        </button>
+
+        <div class="h-3 w-[1px] bg-winBorder"></div>
+
+        <button id="btn-fmt-bold" title="粗體 (Ctrl+B)" class="p-1 hover:bg-winCard rounded text-winMuted hover:text-winText transition font-bold px-1.5 text-xs">
+          B
+        </button>
+        <button id="btn-fmt-italic" title="斜體 (Ctrl+I)" class="p-1 hover:bg-winCard rounded text-winMuted hover:text-winText transition italic px-1.5 text-xs">
+          I
+        </button>
+        <button id="btn-fmt-strike" title="刪除線" class="p-1 hover:bg-winCard rounded text-winMuted hover:text-winText transition line-through px-1.5 text-xs">
+          S
+        </button>
+
+        <div class="h-3 w-[1px] bg-winBorder"></div>
+
+        <button id="btn-fmt-clear" title="清除格式" class="p-1 hover:bg-winCard rounded text-winMuted hover:text-winText transition">
+          <i class="fa-solid fa-remove-format text-xs"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="flex items-center space-x-3 text-xs text-winMuted">
+      <span id="save-indicator" class="flex items-center text-emerald-400 opacity-90 transition-opacity duration-300">
+        <i class="fa-solid fa-circle-check mr-1.5 text-[10px]"></i>已自動儲存
+      </span>
+      <button id="quick-search-btn" class="p-1 hover:bg-winCard rounded text-winMuted hover:text-winText transition flex items-center gap-1">
+        <i class="fa-solid fa-magnifying-glass text-xs"></i>
+      </button>
+    </div>
+  </div>
+
+  <div id="search-bar" class="hidden bg-winPanel border-b border-winBorder px-4 py-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+    <div class="flex items-center space-x-2 flex-1 max-w-2xl">
+      <div class="relative flex-1">
+        <input type="text" id="find-input" placeholder="尋找文字..." class="w-full bg-winBg border border-winBorder rounded px-2 py-1 text-winText outline-none focus:border-winAccent">
+      </div>
+      <div class="relative flex-1">
+        <input type="text" id="replace-input" placeholder="替換為..." class="w-full bg-winBg border border-winBorder rounded px-2 py-1 text-winText outline-none focus:border-winAccent">
+      </div>
+      <button id="btn-find-next" class="bg-winCard hover:bg-winCardHover border border-winBorder px-3 py-1 rounded transition">找下一個</button>
+      <button id="btn-replace-one" class="bg-winCard hover:bg-winCardHover border border-winBorder px-3 py-1 rounded transition">取代</button>
+      <button id="btn-replace-all" class="bg-winAccent hover:bg-winAccentHover text-white px-3 py-1 rounded transition">全部取代</button>
+    </div>
+    <button id="btn-close-search" class="p-1 hover:bg-winCard rounded text-winMuted hover:text-winText">
+      <i class="fa-solid fa-xmark text-sm"></i>
+    </button>
+  </div>
+
+  <main class="flex-1 relative bg-winEditor overflow-hidden flex flex-col">
+    <div id="editor-wrapper" class="flex-1 p-4 overflow-y-auto cursor-text flex" onclick="focusEditor()">
+      <div id="line-numbers" class="line-numbers text-sm leading-relaxed shrink-0">1</div>
+      <div id="editor" contenteditable="true" spellcheck="false" class="editor-content flex-1 text-winText text-base outline-none leading-relaxed"></div>
+    </div>
+  </main>
+
+  <footer class="bg-winPanel border-t border-winBorder px-4 py-1 text-xs text-winMuted flex justify-between items-center select-none">
+    <div class="flex items-center space-x-4">
+      <span id="pos-info">第 1 行，第 1 欄</span>
+      <div class="h-3 w-[1px] bg-winBorder"></div>
+      <span id="char-info">0 個字元</span>
+    </div>
+    
+    <div class="flex items-center space-x-4">
+      <span id="author-version-info" class="text-winMuted">作者：快樂工具人 (v2026-08-21.001)</span>
+      <div class="h-3 w-[1px] bg-winBorder"></div>
+      <span id="doc-type-info" class="hover:text-winText cursor-pointer">純文字</span>
+      <div class="h-3 w-[1px] bg-winBorder"></div>
+      <span id="zoom-info" class="hover:text-winText cursor-pointer">100%</span>
+      <div class="h-3 w-[1px] bg-winBorder"></div>
+      <span>Windows (CRLF)</span>
+      <div class="h-3 w-[1px] bg-winBorder"></div>
+      <span>UTF-8</span>
+    </div>
+  </footer>
+
+  <input type="file" id="file-input" class="hidden" accept=".txt,.md,.html,.js,.json,.css">
+
+  <!-- Settings Modal Dialog -->
+  <div id="settings-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-winPanel border border-winBorder rounded-lg w-full max-w-md p-6 shadow-2xl">
+      <div class="flex justify-between items-center border-b border-winBorder pb-3 mb-4">
+        <h3 class="font-bold text-lg flex items-center"><i class="fa-solid fa-sliders mr-2 text-winAccent"></i>記事本設定</h3>
+        <button id="close-settings" class="text-winMuted hover:text-winText p-1"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      
+      <div class="space-y-4 text-xs">
+        <div>
+          <label class="block text-winMuted mb-1">字體 (Font Family)</label>
+          <select id="setting-font" class="w-full bg-winBg border border-winBorder rounded px-3 py-1.5 text-winText outline-none">
+            <option value="Consolas, 'Courier New', monospace">Consolas (預設等寬)</option>
+            <option value="'Segoe UI', Tahoma, sans-serif">Segoe UI (系統字型)</option>
+            <option value="'Microsoft JhengHei', sans-serif">微軟正黑體</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-winMuted mb-1">預設字型大小</label>
+          <select id="setting-font-size" class="w-full bg-winBg border border-winBorder rounded px-3 py-1.5 text-winText outline-none">
+            <option value="14px">14 px (小)</option>
+            <option value="16px" selected>16 px (標準)</option>
+            <option value="18px">18 px (大)</option>
+            <option value="22px">22 px (特大)</option>
+          </select>
+        </div>
+
+        <div class="pt-2 border-t border-winBorder flex justify-between items-center">
+          <span>自動換行 (Word Wrap)</span>
+          <input type="checkbox" id="setting-wrap" checked class="accent-winAccent">
+        </div>
+      </div>
+
+      <div class="mt-6 flex justify-end">
+        <button id="btn-save-settings" class="bg-winAccent hover:bg-winAccentHover text-white px-4 py-1.5 rounded text-xs">套用變更</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Help Shortcuts Modal Dialog -->
+  <div id="help-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-winPanel border border-winBorder rounded-lg w-full max-w-lg p-6 shadow-2xl max-h-[85vh] flex flex-col">
+      <div class="flex justify-between items-center border-b border-winBorder pb-3 mb-4 shrink-0">
+        <h3 class="font-bold text-lg flex items-center"><i class="fa-solid fa-keyboard mr-2 text-winAccent"></i>快捷鍵指南</h3>
+        <button id="close-help" class="text-winMuted hover:text-winText p-1"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      
+      <div class="space-y-3 text-xs overflow-y-auto pr-1 flex-1">
+        <div class="p-2.5 bg-winBg rounded border border-winBorder">
+          <div class="font-semibold text-winAccent mb-1">行操作快捷鍵</div>
+          <div class="grid grid-cols-2 gap-2 text-winMuted">
+            <div><kbd class="px-1.5 py-0.5 bg-winCard border border-winBorder rounded">Ctrl + X</kbd> 無選取時剪下整行</div>
+            <div><kbd class="px-1.5 py-0.5 bg-winCard border border-winBorder rounded">Ctrl + C</kbd> 無選取時複製整行</div>
+            <div><kbd class="px-1.5 py-0.5 bg-winCard border border-winBorder rounded">Ctrl + Shift + K</kbd> 刪除當前行</div>
+            <div><kbd class="px-1.5 py-0.5 bg-winCard border border-winBorder rounded">Alt + Shift + ↓/↑</kbd> 向下/向上複製行</div>
+            <div><kbd class="px-1.5 py-0.5 bg-winCard border border-winBorder rounded">Alt + ↓/↑</kbd> 向下/向上移動行</div>
+            <div><kbd class="px-1.5 py-0.5 bg-winCard border border-winBorder rounded">Ctrl + Enter</kbd> 在下方插入新行</div>
+            <div><kbd class="px-1.5 py-0.5 bg-winCard border border-winBorder rounded">Ctrl + Shift + Enter</kbd> 在上方插入新行</div>
+          </div>
+        </div>
+
+        <div class="p-2.5 bg-winBg rounded border border-winBorder">
+          <div class="font-semibold text-winAccent mb-1">檔案與搜尋</div>
+          <div class="grid grid-cols-2 gap-2 text-winMuted">
+            <div><kbd class="px-1.5 py-0.5 bg-winCard border border-winBorder rounded">Ctrl + N</kbd> 新增分頁</div>
+            <div><kbd class="px-1.5 py-0.5 bg-winCard border border-winBorder rounded">Ctrl + O</kbd> 開啟檔案</div>
+            <div><kbd class="px-1.5 py-0.5 bg-winCard border border-winBorder rounded">Ctrl + S</kbd> 下載儲存</div>
+            <div><kbd class="px-1.5 py-0.5 bg-winCard border border-winBorder rounded">Ctrl + F</kbd> 尋找與取代</div>
+          </div>
+        </div>
+
+        <div class="p-2.5 bg-winBg rounded border border-winBorder">
+          <div class="font-semibold text-winAccent mb-1">基本格式</div>
+          <div class="grid grid-cols-2 gap-2 text-winMuted">
+            <div><kbd class="px-1.5 py-0.5 bg-winCard border border-winBorder rounded">Ctrl + B</kbd> 粗體文字</div>
+            <div><kbd class="px-1.5 py-0.5 bg-winCard border border-winBorder rounded">Ctrl + I</kbd> 斜體文字</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4 pt-3 border-t border-winBorder flex justify-end shrink-0">
+        <button id="btn-dismiss-help" class="bg-winAccent hover:bg-winAccentHover text-white px-4 py-1.5 rounded text-xs">了解</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- About Modal Dialog -->
+  <div id="about-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-winPanel border border-winBorder rounded-lg w-full max-w-sm p-6 shadow-2xl text-center">
+      <div class="w-16 h-16 bg-winAccent/20 rounded-full flex items-center justify-center mx-auto mb-3 text-winAccent text-2xl">
+        <i class="fa-solid fa-note-sticky"></i>
+      </div>
+      <h3 class="font-bold text-lg text-winText">Windows 11 線上記事本</h3>
+      <p class="text-xs text-winMuted mt-1">版本：<span class="font-mono font-semibold text-winAccent">2026-08-21.001</span></p>
+      
+      <div class="border-t border-winBorder my-4"></div>
+      
+      <div class="text-xs text-winMuted space-y-2">
+        <p>作者：<strong class="text-winText text-sm">快樂工具人</strong></p>
+        <p class="text-[11px] leading-relaxed">提供多分頁、本機自動暫存、行號顯示與高效編輯快捷鍵的線上單頁記事本。</p>
+      </div>
+
+      <div class="mt-6">
+        <button id="close-about" class="bg-winAccent hover:bg-winAccentHover text-white px-5 py-1.5 rounded text-xs w-full">關閉</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- State Variables ---
+    let tabs = [];
+    let activeTabId = null;
+    let zoomLevel = 100;
+    let autoSaveTimeout = null;
+    let isLineNumbersVisible = true;
+
+    const editor = document.getElementById('editor');
+    const editorWrapper = document.getElementById('editor-wrapper');
+    const lineNumbersEl = document.getElementById('line-numbers');
+    const tabContainer = document.getElementById('tab-container');
+    const posInfo = document.getElementById('pos-info');
+    const charInfo = document.getElementById('char-info');
+    const saveIndicator = document.getElementById('save-indicator');
+    const zoomInfo = document.getElementById('zoom-info');
+
+    function initTheme() {
+      const savedTheme = localStorage.getItem('win11_notepad_theme') || 'dark';
+      if (savedTheme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+      updateThemeIcon();
+    }
+
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('win11_notepad_theme', isDark ? 'dark' : 'light');
+      updateThemeIcon();
+    }
+
+    function updateThemeIcon() {
+      const icon = document.getElementById('theme-icon');
+      if (icon) {
+        const isDark = document.documentElement.classList.contains('dark');
+        icon.className = isDark ? 'fa-solid fa-sun text-xs' : 'fa-solid fa-moon text-xs';
+      }
+    }
+
+    function loadAppState() {
+      initTheme();
+      const savedTabs = localStorage.getItem('win11_notepad_tabs');
+      const savedActive = localStorage.getItem('win11_notepad_active_tab');
+
+      if (savedTabs) {
+        try {
+          tabs = JSON.parse(savedTabs);
+        } catch (e) {
+          tabs = [];
+        }
+      }
+
+      if (!tabs || tabs.length === 0) {
+        const defaultId = 'tab_' + Date.now();
+        tabs = [{
+          id: defaultId,
+          title: '未命名',
+          content: '歡迎使用 Windows 11 風格線上記事本！\n\n- 支援常用行操作快捷鍵 (Alt+↑/↓ 移動行, Alt+Shift+↑/↓ 複製行, Ctrl+Shift+K 刪除行)。\n- 無選取文字時按下 Ctrl+X 或 Ctrl+C 可直接處理整行。\n- 支援自動暫存 (LocalStorage)、多分頁與顯示行號。'
+        }];
+        activeTabId = defaultId;
+      } else {
+        activeTabId = savedActive && tabs.some(t => t.id === savedActive) ? savedActive : tabs[0].id;
+      }
+
+      renderTabs();
+      switchTab(activeTabId);
+    }
+
+    function saveAppState() {
+      const currentTab = getCurrentTab();
+      if (currentTab) {
+        currentTab.content = editor.innerHTML;
+      }
+      localStorage.setItem('win11_notepad_tabs', JSON.stringify(tabs));
+      localStorage.setItem('win11_notepad_active_tab', activeTabId);
+
+      saveIndicator.style.opacity = '1';
+      clearTimeout(autoSaveTimeout);
+      autoSaveTimeout = setTimeout(() => {
+        saveIndicator.style.opacity = '0.3';
+      }, 1500);
+    }
+
+    function getCurrentTab() {
+      return tabs.find(t => t.id === activeTabId);
+    }
+
+    function renderTabs() {
+      tabContainer.innerHTML = '';
+      tabs.forEach(tab => {
+        const isActive = tab.id === activeTabId;
+        const tabEl = document.createElement('div');
+        tabEl.className = `flex items-center space-x-2 px-3 py-1.5 rounded-t-lg text-xs cursor-pointer border-t border-x transition-all duration-150 max-w-[160px] group ${
+          isActive 
+            ? 'bg-winPanel border-winBorder text-winText font-medium' 
+            : 'bg-transparent border-transparent text-winMuted hover:bg-winCard/50 hover:text-winText'
+        }`;
+
+        tabEl.onclick = () => switchTab(tab.id);
+
+        tabEl.innerHTML = `
+          <i class="fa-regular fa-file-lines text-[11px] ${isActive ? 'text-winAccent' : 'text-winMuted'}"></i>
+          <span class="truncate flex-1" title="${escapeHtml(tab.title)}">${escapeHtml(tab.title)}</span>
+          <button onclick="closeTab('${tab.id}', event)" class="p-0.5 rounded hover:bg-winBorder opacity-60 group-hover:opacity-100 hover:text-white transition">
+            <i class="fa-solid fa-xmark text-[10px]"></i>
+          </button>
+        `;
+
+        tabContainer.appendChild(tabEl);
+      });
+    }
+
+    function switchTab(id) {
+      const current = getCurrentTab();
+      if (current) {
+        current.content = editor.innerHTML;
+      }
+
+      activeTabId = id;
+      const newActive = getCurrentTab();
+      if (newActive) {
+        editor.innerHTML = newActive.content || '';
+      }
+
+      renderTabs();
+      updateStatus();
+      updateLineNumbers();
+      saveAppState();
+    }
+
+    function addNewTab(title = '未命名', content = '') {
+      const newId = 'tab_' + Date.now();
+      tabs.push({ id: newId, title: title, content: content });
+      switchTab(newId);
+    }
+
+    function closeTab(id, e) {
+      if (e) e.stopPropagation();
+      if (tabs.length === 1) {
+        tabs[0].title = '未命名';
+        tabs[0].content = '';
+        switchTab(tabs[0].id);
+        return;
+      }
+
+      const index = tabs.findIndex(t => t.id === id);
+      tabs = tabs.filter(t => t.id !== id);
+
+      if (activeTabId === id) {
+        const nextActive = tabs[Math.max(0, index - 1)];
+        activeTabId = nextActive.id;
+      }
+
+      renderTabs();
+      switchTab(activeTabId);
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function updateLineNumbers() {
+      if (!isLineNumbersVisible) {
+        lineNumbersEl.style.display = 'none';
+        return;
+      }
+      lineNumbersEl.style.display = 'block';
+
+      const text = editor.innerText || '';
+      const linesCount = Math.max(1, text.split('\n').length);
+      let numsHtml = '';
+      for (let i = 1; i <= linesCount; i++) {
+        numsHtml += `<div>${i}</div>`;
+      }
+      lineNumbersEl.innerHTML = numsHtml;
+    }
+
+    function updateStatus() {
+      const text = editor.innerText || '';
+      charInfo.textContent = `${text.length} 個字元`;
+
+      const sel = window.getSelection();
+      if (sel.rangeCount > 0) {
+        const range = sel.getRangeAt(0);
+        const preCaretRange = range.cloneRange();
+        preCaretRange.selectNodeContents(editor);
+        preCaretRange.setEnd(range.endContainer, range.endOffset);
+        
+        const textBeforeCaret = preCaretRange.toString();
+        const lines = textBeforeCaret.split('\n');
+        const lineNum = lines.length;
+        const colNum = lines[lines.length - 1].length + 1;
+
+        posInfo.textContent = `第 ${lineNum} 行，第 ${colNum} 欄`;
+      } else {
+        posInfo.textContent = `第 1 行，第 1 欄`;
+      }
+
+      updateLineNumbers();
+    }
+
+    function focusEditor() {
+      editor.focus();
+    }
+
+    function execCmd(command, value = null) {
+      document.execCommand(command, false, value);
+      editor.focus();
+      saveAppState();
+    }
+
+    function getCaretLineIndex() {
+      const sel = window.getSelection();
+      if (!sel.rangeCount) return 0;
+      const range = sel.getRangeAt(0);
+      const preCaretRange = range.cloneRange();
+      preCaretRange.selectNodeContents(editor);
+      preCaretRange.setEnd(range.endContainer, range.endOffset);
+      return Math.max(0, preCaretRange.toString().split('\n').length - 1);
+    }
+
+    function setCaretToLineStart(lineIdx) {
+      const text = editor.innerText || '';
+      const lines = text.split('\n');
+      let charPos = 0;
+      for (let i = 0; i < Math.min(lineIdx, lines.length); i++) {
+        charPos += lines[i].length + 1;
+      }
+
+      const range = document.createRange();
+      const sel = window.getSelection();
+      let currentLen = 0;
+      let set = false;
+
+      function traverse(node) {
+        if (set) return;
+        if (node.nodeType === Node.TEXT_NODE) {
+          const len = node.textContent.length;
+          if (currentLen + len >= charPos) {
+            range.setStart(node, Math.min(charPos - currentLen, len));
+            range.collapse(true);
+            set = true;
+          } else {
+            currentLen += len;
+          }
+        } else {
+          for (let child of node.childNodes) {
+            traverse(child);
+            if (set) break;
+          }
+        }
+      }
+
+      traverse(editor);
+      if (!set) {
+        range.selectNodeContents(editor);
+        range.collapse(false);
+      }
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+
+    function copyToClipboard(text) {
+      try {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        textarea.style.left = '-9999px';
+        document.body.appendChild(textarea);
+        textarea.select();
+        textarea.setSelectionRange(0, 99999);
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      } catch (err) {
+        console.warn('Copy to clipboard failed:', err);
+      }
+    }
+
+    function handleVsCodeShortcuts(e) {
+      const sel = window.getSelection();
+      const isCollapsed = sel.isCollapsed;
+      const text = editor.innerText || '';
+      const lines = text.split('\n');
+      const currentLineIdx = getCaretLineIndex();
+
+      // Ctrl + X without selection -> Cut Line
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'x' && isCollapsed) {
+        e.preventDefault();
+        const lineContent = lines[currentLineIdx] || '';
+        copyToClipboard(lineContent + '\n');
+        lines.splice(currentLineIdx, 1);
+        editor.innerText = lines.join('\n');
+        setCaretToLineStart(Math.min(currentLineIdx, lines.length - 1));
+        saveAppState();
+        updateStatus();
+        return;
+      }
+
+      // Ctrl + C without selection -> Copy Line
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c' && isCollapsed) {
+        e.preventDefault();
+        const lineContent = lines[currentLineIdx] || '';
+        copyToClipboard(lineContent + '\n');
+        return;
+      }
+
+      // Ctrl + Shift + K -> Delete Line
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        lines.splice(currentLineIdx, 1);
+        editor.innerText = lines.join('\n');
+        setCaretToLineStart(Math.min(currentLineIdx, lines.length - 1));
+        saveAppState();
+        updateStatus();
+        return;
+      }
+
+      // Alt + Shift + Down -> Clone Line Down
+      if (e.altKey && e.shiftKey && e.key === 'ArrowDown') {
+        e.preventDefault();
+        lines.splice(currentLineIdx + 1, 0, lines[currentLineIdx]);
+        editor.innerText = lines.join('\n');
+        setCaretToLineStart(currentLineIdx + 1);
+        saveAppState();
+        updateStatus();
+        return;
+      }
+
+      // Alt + Shift + Up -> Clone Line Up
+      if (e.altKey && e.shiftKey && e.key === 'ArrowUp') {
+        e.preventDefault();
+        lines.splice(currentLineIdx, 0, lines[currentLineIdx]);
+        editor.innerText = lines.join('\n');
+        setCaretToLineStart(currentLineIdx);
+        saveAppState();
+        updateStatus();
+        return;
+      }
+
+      // Alt + Down -> Move Line Down
+      if (e.altKey && !e.shiftKey && e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (currentLineIdx < lines.length - 1) {
+          const temp = lines[currentLineIdx];
+          lines[currentLineIdx] = lines[currentLineIdx + 1];
+          lines[currentLineIdx + 1] = temp;
+          editor.innerText = lines.join('\n');
+          setCaretToLineStart(currentLineIdx + 1);
+          saveAppState();
+          updateStatus();
+        }
+        return;
+      }
+
+      // Alt + Up -> Move Line Up
+      if (e.altKey && !e.shiftKey && e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (currentLineIdx > 0) {
+          const temp = lines[currentLineIdx];
+          lines[currentLineIdx] = lines[currentLineIdx - 1];
+          lines[currentLineIdx - 1] = temp;
+          editor.innerText = lines.join('\n');
+          setCaretToLineStart(currentLineIdx - 1);
+          saveAppState();
+          updateStatus();
+        }
+        return;
+      }
+
+      // Ctrl + Enter -> Insert Line Below
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === 'Enter') {
+        e.preventDefault();
+        lines.splice(currentLineIdx + 1, 0, '');
+        editor.innerText = lines.join('\n');
+        setCaretToLineStart(currentLineIdx + 1);
+        saveAppState();
+        updateStatus();
+        return;
+      }
+
+      // Ctrl + Shift + Enter -> Insert Line Above
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'Enter') {
+        e.preventDefault();
+        lines.splice(currentLineIdx, 0, '');
+        editor.innerText = lines.join('\n');
+        setCaretToLineStart(currentLineIdx);
+        saveAppState();
+        updateStatus();
+        return;
+      }
+    }
+
+    function downloadCurrentTab() {
+      const current = getCurrentTab();
+      if (!current) return;
+
+      const blob = new Blob([editor.innerText], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${current.title.endsWith('.txt') ? current.title : current.title + '.txt'}`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function openLocalFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        addNewTab(file.name, escapeHtml(evt.target.result));
+      };
+      reader.readAsText(file);
+      e.target.value = '';
+    }
+
+    function toggleSearchBar(show) {
+      const bar = document.getElementById('search-bar');
+      if (show) {
+        bar.classList.remove('hidden');
+        document.getElementById('find-input').focus();
+      } else {
+        bar.classList.add('hidden');
+      }
+    }
+
+    function performFindNext() {
+      const query = document.getElementById('find-input').value;
+      if (!query) return;
+      window.find(query, false, false, true, false, false, false);
+    }
+
+    function performReplace() {
+      const findText = document.getElementById('find-input').value;
+      const replaceText = document.getElementById('replace-input').value;
+      if (!findText) return;
+
+      const sel = window.getSelection();
+      if (sel.toString().toLowerCase() === findText.toLowerCase()) {
+        execCmd('insertText', replaceText);
+      }
+      performFindNext();
+    }
+
+    function performReplaceAll() {
+      const findText = document.getElementById('find-input').value;
+      const replaceText = document.getElementById('replace-input').value;
+      if (!findText) return;
+
+      const content = editor.innerText;
+      const updated = content.replaceAll(findText, replaceText);
+      editor.innerText = updated;
+      saveAppState();
+      updateStatus();
+    }
+
+    function closeAllDropdowns() {
+      document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.remove('show'));
+    }
+
+    function toggleDropdown(id, e) {
+      e.stopPropagation();
+      const menu = document.getElementById(id);
+      const isVisible = menu.classList.contains('show');
+      closeAllDropdowns();
+      if (!isVisible) menu.classList.add('show');
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadAppState();
+
+      editor.addEventListener('input', () => {
+        saveAppState();
+        updateStatus();
+      });
+
+      editor.addEventListener('keyup', updateStatus);
+      editor.addEventListener('click', () => {
+        updateStatus();
+      });
+
+      editorWrapper.addEventListener('scroll', () => {
+        lineNumbersEl.scrollTop = editorWrapper.scrollTop;
+      });
+
+      document.getElementById('add-tab-btn').onclick = () => addNewTab();
+
+      // Menu Toggles
+      document.getElementById('menu-file-btn').onclick = (e) => toggleDropdown('menu-file-dropdown', e);
+      document.getElementById('menu-edit-btn').onclick = (e) => toggleDropdown('menu-edit-dropdown', e);
+      document.getElementById('menu-view-btn').onclick = (e) => toggleDropdown('menu-view-dropdown', e);
+      document.getElementById('menu-help-btn').onclick = (e) => toggleDropdown('menu-help-dropdown', e);
+
+      // File Actions
+      document.getElementById('action-new').onclick = () => { closeAllDropdowns(); addNewTab(); };
+      document.getElementById('action-open').onclick = () => { closeAllDropdowns(); document.getElementById('file-input').click(); };
+      document.getElementById('action-save').onclick = () => { closeAllDropdowns(); saveAppState(); };
+      document.getElementById('action-save-as').onclick = () => { closeAllDropdowns(); downloadCurrentTab(); };
+      document.getElementById('action-clear').onclick = () => {
+        closeAllDropdowns();
+        if (confirm('確定要清空目前分頁的內容嗎？')) {
+          editor.innerHTML = '';
+          saveAppState();
+          updateStatus();
+        }
+      };
+
+      document.getElementById('file-input').onchange = openLocalFile;
+
+      // Edit Actions
+      document.getElementById('action-undo').onclick = () => { closeAllDropdowns(); execCmd('undo'); };
+      document.getElementById('action-redo').onclick = () => { closeAllDropdowns(); execCmd('redo'); };
+      document.getElementById('action-find').onclick = () => { closeAllDropdowns(); toggleSearchBar(true); };
+      document.getElementById('quick-search-btn').onclick = () => toggleSearchBar(true);
+      document.getElementById('btn-close-search').onclick = () => toggleSearchBar(false);
+
+      // Search controls
+      document.getElementById('btn-find-next').onclick = performFindNext;
+      document.getElementById('btn-replace-one').onclick = performReplace;
+      document.getElementById('btn-replace-all').onclick = performReplaceAll;
+
+      // View Actions
+      document.getElementById('action-toggle-line-numbers').onclick = () => {
+        isLineNumbersVisible = !isLineNumbersVisible;
+        document.getElementById('line-num-check-icon').style.display = isLineNumbersVisible ? 'inline-block' : 'none';
+        updateLineNumbers();
+        closeAllDropdowns();
+      };
+
+      let isWordWrap = true;
+      document.getElementById('action-toggle-wrap').onclick = () => {
+        isWordWrap = !isWordWrap;
+        editor.style.whiteSpace = isWordWrap ? 'pre-wrap' : 'pre';
+        document.getElementById('wrap-check-icon').style.display = isWordWrap ? 'inline-block' : 'none';
+        closeAllDropdowns();
+      };
+
+      document.getElementById('action-zoom-in').onclick = () => {
+        zoomLevel = Math.min(200, zoomLevel + 10);
+        editor.style.fontSize = `${(16 * zoomLevel) / 100}px`;
+        zoomInfo.textContent = `${zoomLevel}%`;
+        closeAllDropdowns();
+      };
+
+      document.getElementById('action-zoom-out').onclick = () => {
+        zoomLevel = Math.max(50, zoomLevel - 10);
+        editor.style.fontSize = `${(16 * zoomLevel) / 100}px`;
+        zoomInfo.textContent = `${zoomLevel}%`;
+        closeAllDropdowns();
+      };
+
+      document.getElementById('action-zoom-reset').onclick = () => {
+        zoomLevel = 100;
+        editor.style.fontSize = `16px`;
+        zoomInfo.textContent = `100%`;
+        closeAllDropdowns();
+      };
+
+      // Formatting Bar
+      document.getElementById('format-heading').onchange = (e) => {
+        const tag = e.target.value;
+        execCmd('formatBlock', tag === 'p' ? '<p>' : `<${tag}>`);
+      };
+
+      document.getElementById('btn-list-ul').onclick = () => execCmd('insertUnorderedList');
+      document.getElementById('btn-list-ol').onclick = () => execCmd('insertOrderedList');
+      document.getElementById('btn-fmt-bold').onclick = () => execCmd('bold');
+      document.getElementById('btn-fmt-italic').onclick = () => execCmd('italic');
+      document.getElementById('btn-fmt-strike').onclick = () => execCmd('strikeThrough');
+      document.getElementById('btn-fmt-clear').onclick = () => execCmd('removeFormat');
+
+      // Modals Logic
+      const settingsModal = document.getElementById('settings-modal');
+      const helpModal = document.getElementById('help-modal');
+      const aboutModal = document.getElementById('about-modal');
+
+      document.getElementById('btn-settings-toggle').onclick = () => settingsModal.classList.remove('hidden');
+      document.getElementById('close-settings').onclick = () => settingsModal.classList.add('hidden');
+      document.getElementById('btn-save-settings').onclick = () => {
+        const font = document.getElementById('setting-font').value;
+        const fontSize = document.getElementById('setting-font-size').value;
+        editor.style.fontFamily = font;
+        editor.style.fontSize = fontSize;
+        settingsModal.classList.add('hidden');
+      };
+
+      const openHelp = () => { closeAllDropdowns(); helpModal.classList.remove('hidden'); };
+      const closeHelp = () => helpModal.classList.add('hidden');
+      document.getElementById('btn-help-modal').onclick = openHelp;
+      document.getElementById('action-shortcuts').onclick = openHelp;
+      document.getElementById('close-help').onclick = closeHelp;
+      document.getElementById('btn-dismiss-help').onclick = closeHelp;
+
+      const openAbout = () => { closeAllDropdowns(); aboutModal.classList.remove('hidden'); };
+      const closeAbout = () => aboutModal.classList.add('hidden');
+      document.getElementById('action-about').onclick = openAbout;
+      document.getElementById('close-about').onclick = closeAbout;
+
+      document.getElementById('btn-theme-toggle').onclick = toggleTheme;
+      document.addEventListener('click', closeAllDropdowns);
+
+      // Keyboard Shortcut Listeners
+      document.addEventListener('keydown', (e) => {
+        if (e.target === editor) {
+          handleVsCodeShortcuts(e);
+        }
+
+        if (e.ctrlKey || e.metaKey) {
+          if (e.key === 's') {
+            e.preventDefault();
+            downloadCurrentTab();
+          } else if (e.key === 'n') {
+            e.preventDefault();
+            addNewTab();
+          } else if (e.key === 'o') {
+            e.preventDefault();
+            document.getElementById('file-input').click();
+          } else if (e.key === 'f') {
+            e.preventDefault();
+            toggleSearchBar(true);
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>
